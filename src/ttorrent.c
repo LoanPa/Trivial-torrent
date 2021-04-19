@@ -9,6 +9,7 @@
 #include<stdlib.h>
 #include<string.h>
 #include<sys/socket.h>
+#include<arpa/inet.h>
 // TODO: hey!? what is this?
 
 /**
@@ -156,7 +157,7 @@ int main(int argc, char **argv) {
 		struct sockaddr_in sockaddress_peer;
 		memset(&sockaddress_peer, '\0', sizeof(struct sockaddr_in));
 		sockaddress_peer.sin_family = AF_INET;
-
+		sockaddress_peer.sin_port = 0;
 		
 		
 		for (uint64_t j = 0; j < torrent.peer_count; j++) /* 2. For each server peer in the metainfo file: */
@@ -191,8 +192,8 @@ int main(int argc, char **argv) {
 
 			
 			sockaddress_peer.sin_port = (torrent.peers + i)->peer_port;
-			
-			sockaddress_peer.sin_addr.s_addr = INADDR_ANY;
+			printf("Peer port:%c", sockaddress_peer.sin_port);
+			sockaddress_peer.sin_addr.s_addr = (uint32_t) inet_addr("127.0.0.1"); // TODO:
 
 			/*
 			sockaddress_peer.sin_addr.s_addr += (torrent.peers + i)->peer_address[0];
