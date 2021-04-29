@@ -1,7 +1,7 @@
 
 // Trivial Torrent
 
-// TODO: some includes here
+
 
 #include "file_io.h"
 #include "logger.h"
@@ -10,7 +10,9 @@
 #include<string.h>
 #include<sys/socket.h>
 #include<arpa/inet.h>
-// TODO: hey!? what is this?
+#include <unistd.h>
+
+// TODO: remove debug logs
 
 /**
  * This is the magic number (already stored in network byte order).
@@ -87,49 +89,51 @@ int main(int argc, char **argv) {
 		char *metainfoFileName = malloc(sizeof(char)*pathSize);
 		memcpy(metainfoFileName, *(argv + 1), pathSize);
 
-		pathSize-=9; // points to the '.' in anystr.ttorrent
+		long int unsigned count = 9; // TODO: while buscant el "."
+
+		pathSize-=count; // points to the '.' in anystr.ttorrent
 		char *fileName = malloc(sizeof(char)*pathSize);
 		memcpy(fileName, *(argv + 1), pathSize);
 
-		//1. Load a metainfo file (functionality is already available in the file_io API through the create_torrent_from_-metainfo_file function).			
+		//1. Load a metainfo file
 		if (create_torrent_from_metainfo_file (metainfoFileName, &torrent ,fileName ) == -1)
 		{
 			log_message(LOG_INFO, "Could not create torrent from metainfo file");
 			return -1;
 		}
 
-		/*	
-		2. For each server peer in the metainfo file:
-			a. Connect to that server peer.
-			b. For each incorrect block in the downloaded file (the hash does not match in 1b).
-				i. Send a request to the server peer.
-				ii. If the server responds with the block, store it to the downloaded file.
-				iii. Otherwise, if the server signals the unavailablity of the block, do nothing.
-			c. Close the connection.
+
+		/*
+		struct sockaddr_in sockaddress;
+		memset(&sockaddress, '\0', sizeof(struct sockaddr_in));
+
+		sockaddress.sin_family = AF_INET;
+		sockaddress.sin_port = 0;
+		sockaddress.sin_addr.s_addr = INADDR_ANY;
 		*/
 
-		/* Creació del socket */
-		
-		
+
+		struct sockaddr_in sockaddress_peer;
+		memset(&sockaddress_peer, '\0', sizeof(struct sockaddr_in));
+		sockaddress_peer.sin_family = AF_INET;
+
+		//struct in_addr peer_address;
 		
 
-
-		
-
+		// Buffer
 		uint8_t message[RAW_MESSAGE_SIZE];
-		message[0] = (uint8_t) (MAGIC_NUMBER);
-		message[1] = (uint8_t) (MAGIC_NUMBER >> 8);
-		message[2] = (uint8_t) (MAGIC_NUMBER >> 16);
-		message[3] = (uint8_t) (MAGIC_NUMBER >> 24);
-
-		// Per cada requested block
 
 		(void) message; //TODO: treure això
 
+		message[0] = (uint8_t) (MAGIC_NUMBER);
+		message[1] = (uint8_t) (MAGIC_NUMBER >> 8);	
+		message[2] = (uint8_t) (MAGIC_NUMBER >> 16);
+		message[3] = (uint8_t) (MAGIC_NUMBER >> 24);
+
+				// Per cada requested block
 		for (uint64_t block_number = 0; block_number < torrent.block_count; block_number++)
 		{		/* Per cada block que no tenim*/
 
-			
 			if(torrent.block_map[block_number])
 			{
 				message[4] = MSG_REQUEST;
@@ -144,36 +148,21 @@ int main(int argc, char **argv) {
 			}
 		}
 		
-
-		struct sockaddr_in sockaddress;
-		memset(&sockaddress, '\0', sizeof(struct sockaddr_in));
-
-		sockaddress.sin_family = AF_INET;
-		sockaddress.sin_port = 0;
-		sockaddress.sin_addr.s_addr = INADDR_ANY;
-
-		int sock = socket(AF_INET, SOCK_STREAM, 0);
-
-		struct sockaddr_in sockaddress_peer;
-		memset(&sockaddress_peer, '\0', sizeof(struct sockaddr_in));
-		sockaddress_peer.sin_family = AF_INET;
-		sockaddress_peer.sin_port = 0;
-		
-		
-		for (uint64_t j = 0; j < torrent.peer_count; j++) /* 2. For each server peer in the metainfo file: */
+		for (uint64_t peerIterator = 0; peerIterator < torrent.peer_count; peerIterator++) /* 2. For each server peer in the metainfo file: */
 		{
 
 			// a. Check for the existence of the associated downloaded file.
-			uint64_t i = 0;
+			uint64_t missingBlockNumber = 0;
 			int fileDownloaded = 1;
 			log_message(LOG_DEBUG, "Checking if file is already on disk...");
-			while ((i < torrent.block_count) && (fileDownloaded == 1))
+			while ((missingBlockNumber < torrent.block_count) && (fileDownloaded == 1))
         	{
-				if (torrent.block_map[i] == 0)
+				if (torrent.block_map[missingBlockNumber] == 0)
 					fileDownloaded = 0;
-				++i;
+				else
+					++missingBlockNumber;
 			}
-			if(fileDownloaded == 1) // 
+			if(fileDownloaded == 1)
 			{
 				log_message(LOG_DEBUG, "File already downloaded, no point in continuing");
 				break;
@@ -181,47 +170,106 @@ int main(int argc, char **argv) {
 			else
 				log_message(LOG_DEBUG, "File not found on disk, proceding to download it");
 
-
-
+			int sock = socket(AF_INET, SOCK_STREAM, 0);
 
 			if (sock == -1)
 			{
 				perror("Error: socket could not be created");
-				return 1;
+				return -1;
 			}
+			log_message(LOG_DEBUG, "Socket works"); // TODO: treure això
+			
+			sockaddress_peer.sin_port = (torrent.peers + missingBlockNumber)->peer_port;
+
+
+
+			//sockaddress_peer.sin_addr
 
 			
-			sockaddress_peer.sin_port = (torrent.peers + i)->peer_port;
-			printf("Peer port:%c", sockaddress_peer.sin_port);
-			sockaddress_peer.sin_addr.s_addr = (uint32_t) inet_addr("127.0.0.1"); // TODO:
 
-			/*
-			sockaddress_peer.sin_addr.s_addr += (torrent.peers + i)->peer_address[0];
+			// Aquest missatge es per dir que la cosa d'abaix no funciona per assignar l'adreça i que s'ha de trobar una solució
 
+
+			sockaddress_peer.sin_addr.s_addr = (torrent.peers + missingBlockNumber)->peer_address[3];
 			sockaddress_peer.sin_addr.s_addr = sockaddress_peer.sin_addr.s_addr << 8;
-			
-			sockaddress_peer.sin_addr.s_addr += (torrent.peers + i)->peer_address[1];
-			
+			sockaddress_peer.sin_addr.s_addr |= (torrent.peers + missingBlockNumber)->peer_address[2];
 			sockaddress_peer.sin_addr.s_addr = sockaddress_peer.sin_addr.s_addr << 8;
-			
-			sockaddress_peer.sin_addr.s_addr += (torrent.peers + i)->peer_address[2];
-			
+			sockaddress_peer.sin_addr.s_addr |= (torrent.peers + missingBlockNumber)->peer_address[1];
 			sockaddress_peer.sin_addr.s_addr = sockaddress_peer.sin_addr.s_addr << 8;
-			
-			sockaddress_peer.sin_addr.s_addr += (torrent.peers + i)->peer_address[3];
-			*/
-			
-			if(connect(sock, (struct sockaddr *) &sockaddress_peer, sizeof(struct sockaddr_in)) == -1)
+			sockaddress_peer.sin_addr.s_addr |= (torrent.peers + missingBlockNumber)->peer_address[0];
+
+
+			log_message(LOG_DEBUG, "Aquí s'acaba de posar l'adreça"); // TODO: treure això
+
+			if(connect(sock, (struct sockaddr *) &sockaddress_peer, sizeof( struct sockaddr)) == -1)
 			{
 				perror("Error: Connect() function exited with code -1");
 				return -1;
 			}
-			log_message(LOG_DEBUG, "Socket connected succesfully");
+			log_message(LOG_DEBUG, "Socket connected succesfully"); // TODO: treure això
 			
+			if (send(sock, message, sizeof(message), 0) == -1)
+			{
+				perror("Error: send() function exited with code -1");
+				return -1;
+			}
+			log_message(LOG_DEBUG, "send() function executed successfully");
+			
+			if (recv(sock, message, MAX_BLOCK_SIZE, 0) == -1)
+			{
+				perror("Error: recv() function exited with code -1");
+				return -1;
+			}
+			log_message(LOG_DEBUG, "recv() function executed successfully");
+
+			
+			/*	
+		2. For each server peer in the metainfo file:
+				ii. If the server responds with the block, store it to the downloaded file.
+				iii. Otherwise, if the server signals the unavailablity of the block, do nothing.
+			c. Close the connection.
+		*/	
+			struct block_t downloaded_block;
+			if (message[4] == MSG_RESPONSE_OK)
+			{
+				if (store_block(&torrent, missingBlockNumber, &downloaded_block) == -1)
+				{
+					perror("Error: block was not stored correctly");	
+				}
+				else
+				{
+					torrent.block_map[missingBlockNumber] = 1;
+				}
+			} 
+			
+			if(close(sock) == -1)
+			{
+				perror("Error: close() function exited with code -1");
+				return -1;
+			}
 			
 		}
 		
 
+	}
+	// server
+	else // TODO: posar això bé
+	{
+
+
+		// TODO: tot això  ⤵
+		/*
+		*	1. Load a metainfo file (functionality is already implemented in the file_io API through the create_torrent_from_-
+		*		metainfo_file function).
+		*			a. Check for the existence of the associated downloaded file.
+		*			b. Check which blocks are correct using the SHA256 hashes in the metainfo file.
+		*	2. Forever listen to incoming connections, and for each connection:
+		*			a. Wait for a message.
+		*			b. If a message requests a block that can be served (correct hash), respond with the appropriate message,
+		*				followed by the raw block data.
+		*			c. Otherwise, respond with a message signaling the unavailability of the block.
+		*			
+		*/
 	}
 
 	// The following statements most certainly will need to be deleted at some point...
