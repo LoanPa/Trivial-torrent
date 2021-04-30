@@ -205,14 +205,14 @@ int main(int argc, char **argv) {
 				if( torrent.block_map[block_number] == 0 )
 				{
 					message[4] = MSG_REQUEST;
-					message[5] = (uint8_t) (block_number);
-					message[6] = (uint8_t) (block_number >> 8);
-					message[7] = (uint8_t) (block_number >> 16);
-					message[8] = (uint8_t) (block_number >> 24);
-					message[9] = (uint8_t) (block_number >> 32);
-					message[10] = (uint8_t) (block_number >> 40);
-					message[11] = (uint8_t) (block_number >> 48);
-					message[12] = (uint8_t) (block_number >> 56);
+					message[12] = (uint8_t) (block_number);
+					message[11] = (uint8_t) (block_number >> 8);
+					message[10] = (uint8_t) (block_number >> 16);
+					message[9] = (uint8_t) (block_number >> 24);
+					message[8] = (uint8_t) (block_number >> 32);
+					message[7] = (uint8_t) (block_number >> 40);
+					message[6] = (uint8_t) (block_number >> 48);
+					message[5] = (uint8_t) (block_number >> 56);
 
 
 					
@@ -246,7 +246,7 @@ int main(int argc, char **argv) {
 
 					if (message[4] == MSG_RESPONSE_OK)
 					{
-						log_printf(LOG_DEBUG, "Per nº %d has block nº %d", peerNumber, block_number);
+						log_printf(LOG_DEBUG, "Peer nº %d has block nº %d", peerNumber, block_number);
 
 
 						struct block_t recvd_block;
