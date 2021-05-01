@@ -55,6 +55,7 @@ int main(int argc, char **argv) {
 	if(argc == 2) // TODO: canviar aixo que no sigui tan cutre
 	{
 		/*
+					TODO:
 		1. Load a metainfo file (functionality is already available in the file_io API through the create_torrent_from_-
 		metainfo_file function).
 			a. Check for the existence of the associated downloaded file.
@@ -70,10 +71,6 @@ int main(int argc, char **argv) {
 
 		*/
 
-		// 1 //
-
-		
-
 		struct torrent_t torrent;
 
 		long int unsigned pathSize = 0;
@@ -83,7 +80,7 @@ int main(int argc, char **argv) {
 
 		if(pathSize <= 9)
 		{
-			log_message(LOG_INFO, "The file must be in .ttorrent format");
+			perror("The file must be in .ttorrent format");
 			return -1;
 		}
 
@@ -99,33 +96,18 @@ int main(int argc, char **argv) {
 		//1. Load a metainfo file
 		if (create_torrent_from_metainfo_file (metainfoFileName, &torrent ,fileName ) == -1)
 		{
-			log_message(LOG_INFO, "Could not create torrent from metainfo file");
+			perror("Could not create torrent from metainfo file");
 			return -1;
 		}
-
-
-		/*
-		struct sockaddr_in sockaddress;
-		memset(&sockaddress, '\0', sizeof(struct sockaddr_in));
-
-		sockaddress.sin_family = AF_INET;
-		sockaddress.sin_port = 0;
-		sockaddress.sin_addr.s_addr = INADDR_ANY;
-		*/
-
-
-
+		
+		
 		struct sockaddr_in sockaddress_peer;
 		memset(&sockaddress_peer, '\0', sizeof(struct sockaddr_in));
 		sockaddress_peer.sin_family = AF_INET;
 		
 		
-
 		
 		
-
-		//TODO: Al posar això en una funció posar un paràmetre que indiqui el tipus de missatge
-
 		// Declaracio message
 		uint8_t message[RAW_MESSAGE_SIZE];
 
@@ -145,7 +127,7 @@ int main(int argc, char **argv) {
 			// a. Check for the existence of the associated downloaded file.
 			uint64_t missingBlockNumber = 0;
 			int fileDownloaded = 1;
-			log_message(LOG_DEBUG, "Checking if file is already on disk...");
+			log_message(LOG_INFO, "Checking if file is already on disk...");
 			while ((missingBlockNumber < torrent.block_count) && (fileDownloaded == 1))
         	{
 				if (torrent.block_map[missingBlockNumber] == 0)
@@ -155,11 +137,11 @@ int main(int argc, char **argv) {
 			}
 			if(fileDownloaded == 1)
 			{
-				log_message(LOG_DEBUG, "File already downloaded, no point in continuing");
+				log_message(LOG_INFO, "File already downloaded, no point in continuing");
 				return 0;
 			}
 			else
-				log_message(LOG_DEBUG, "File not found on disk, proceding to download it");
+				log_message(LOG_INFO, "File not found on disk, proceding to download it");
 
 			// Fi del file check
 
@@ -172,7 +154,7 @@ int main(int argc, char **argv) {
 				perror("Error: socket could not be created");
 				return -1;
 			}
-			log_message(LOG_DEBUG, "Socket works"); // TODO: treure això
+			
 			
 			
 			
@@ -195,7 +177,7 @@ int main(int argc, char **argv) {
 				perror("Error: Connect() function exited with code -1");
 				continue; //No es pot conectar, passem al seguent peer
 			}
-			log_printf(LOG_DEBUG, "Successfully connected to peer nº %d", peerNumber); // TODO: treure això
+			
 
 			
 			//Per cada peer comprovem cada bloc que ens falta
@@ -205,16 +187,18 @@ int main(int argc, char **argv) {
 				if( torrent.block_map[block_number] == 0 )
 				{
 					message[4] = MSG_REQUEST;
-					message[12] = (uint8_t) (block_number);
-					message[11] = (uint8_t) (block_number >> 8);
-					message[10] = (uint8_t) (block_number >> 16);
-					message[9] = (uint8_t) (block_number >> 24);
-					message[8] = (uint8_t) (block_number >> 32);
-					message[7] = (uint8_t) (block_number >> 40);
-					message[6] = (uint8_t) (block_number >> 48);
+
+					//Network byte order = Big endian
+					// Big endian -> Més significatiu primer
+
 					message[5] = (uint8_t) (block_number >> 56);
-
-
+					message[6] = (uint8_t) (block_number >> 48);
+					message[7] = (uint8_t) (block_number >> 40);
+					message[8] = (uint8_t) (block_number >> 32);
+					message[9] = (uint8_t) (block_number >> 24);
+					message[10] = (uint8_t) (block_number >> 16);
+					message[11] = (uint8_t) (block_number >> 8);
+					message[12] = (uint8_t) (block_number);
 					
 					if (send(sock, message, sizeof(message), 0) == -1)
 					{
@@ -225,7 +209,7 @@ int main(int argc, char **argv) {
 						perror("Error: send() function exited with code -1");
 						break;
 					}
-					log_message(LOG_DEBUG, "send() function executed successfully");
+					
 					
 					if (recv(sock, &message, sizeof(message), 0 ) == -1)
 					{
@@ -240,33 +224,28 @@ int main(int argc, char **argv) {
 						perror("Error: 1st recv() function exited with code -1");
 						continue; //Provem amb un altre bloc però amb el mateix peer
 					}
-					log_message(LOG_DEBUG, "1st recv() function executed successfully");
 
-					log_printf(LOG_DEBUG, "La resposta del missatge es: %d", message[4]);
 
 					if (message[4] == MSG_RESPONSE_OK)
 					{
-						log_printf(LOG_DEBUG, "Peer nº %d has block nº %d", peerNumber, block_number);
-
-
+						
+						
 						struct block_t recvd_block;
-
-
+						//Buffer per a contenir el bloc
 						uint8_t data_message[MAX_BLOCK_SIZE];
 						
-						//Necessari per a captar el codi d'error
-						long int auxLen =recv(sock, &data_message, MAX_BLOCK_SIZE, MSG_WAITALL);
-						log_message(LOG_DEBUG, "Ja soc aquí!");
-
-						if (auxLen <= 0)
+						
+						uint64_t expected_block_length = get_block_size(&torrent, block_number);
+						if (recv(sock, &data_message, expected_block_length , 0) <= 0)
 						{
 							perror("Error: 2nd recv() function exited with code -1");
 							continue; //Provem amb un altre bloc però amb el mateix peer
 						}
-						log_message(LOG_DEBUG, "2nd recv() function executed successfully");
+						
 						
 						//Ara que sabem que el recv no els dona error fem l'assignació
-						recvd_block.size = (uint64_t) auxLen;
+						recvd_block.size = expected_block_length;
+						
 
 						//Assignem a recvd_block el contingut de data_message
 						memcpy(recvd_block.data, data_message, recvd_block.size);
@@ -287,7 +266,6 @@ int main(int argc, char **argv) {
 						
 
 
-						log_message(LOG_DEBUG, "Ens han enviat un bloc");
 						if (store_block(&torrent, block_number, &recvd_block) == -1)
 							perror("Error: block was not stored correctly");	
 						else
@@ -295,8 +273,6 @@ int main(int argc, char **argv) {
 						
 												
 					}// if del MSG_RESPONSE_OK
-					log_printf(LOG_DEBUG, "For dels blocs, iteration nº: %d", block_number);
-
 				}// Aquí acaba el if de els blocs que no tenim
 			}// Aquí acaba el for dels blocs
 
@@ -306,16 +282,7 @@ int main(int argc, char **argv) {
 				perror("Error: close() function exited with code -1");
 				return -1;
 			}
-			log_message(LOG_DEBUG, "Socket closed");
-			
-			/*	
-		2. For each server peer in the metainfo file:
-				ii. If the server responds with the block, store it to the downloaded file.
-				iii. Otherwise, if the server signals the unavailablity of the block, do nothing.
-			c. Close the connection.
-		*/	
-			
-			
+		
 		}
 		
 
@@ -369,7 +336,7 @@ int main(int argc, char **argv) {
 
 		uint64_t missingBlockNumber = 0;
 		int fileDownloaded = 1;
-		log_message(LOG_DEBUG, "Checking blocks...");
+		log_message(LOG_INFO, "Checking blocks...");
 		while ((missingBlockNumber < torrent.block_count) && (fileDownloaded == 1))
 		{
 			if (torrent.block_map[missingBlockNumber] != 0)
