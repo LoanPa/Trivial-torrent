@@ -410,43 +410,60 @@ int server(char* path, char* port)
 	for(;;) //Forever listen to incoming connections
 	{
 
-
+		socklen_t addrlen = sizeof(struct sockaddr_in);
 		
-		int s1 = accept(sock, (struct sockaddr *) &s1address,(socklen_t * restrict) sizeof(struct sockaddr_in));
+		int s1 = accept(sock, (struct sockaddr *) &s1address, &addrlen);
+		if(s1 == -1)
+		{
+			perror("Error: accept() function exited with code -1");
+			log_printf(LOG_DEBUG, "errno = %d", errno);
+			return -1;
+		}
 		
 		int pid = fork();
 		if(pid == -1)
 		{
 			perror("Error: fork() function exited with code -1");
-
+			return -1;
 		}
+		log_printf(LOG_DEBUG, "s1 = %d", s1);
 
 		if (pid > 0)	/* parent process */
 		{
+			log_message(LOG_DEBUG, "Parent process");
 			
 			if(close(s1 == -1))
 			{
 				perror("Error: close(s1) exited with code -1");
+				log_printf(LOG_DEBUG, "errno = %d", errno);
+
 				return -1;
 			}
+			
 			continue; // seguim amb el for
 		}
 		
 		if(pid == 0)
 		{
+			log_printf(LOG_DEBUG, "Child process");
+			/*
 			if(close(sock) == -1)
 			{
 				perror("Error: close(sock) exited with code -1");
+				log_printf(LOG_DEBUG, "errno = %d", errno);
 				return -1;
 			}
-			
+			log_printf(LOG_DEBUG, "sock closed succesfully");
+			*/
 			uint64_t block_number = 0;
-
+			
 			if(recv(s1, message, RAW_MESSAGE_SIZE, 0) != RAW_MESSAGE_SIZE)
 			{
 				perror("Error: recv() function exited with code -1");
+				log_printf(LOG_DEBUG, "errno = %d", errno);
 				return -1;
 			}
+			log_printf(LOG_DEBUG, "recv()'d successfully");
 
 			if(message[4] == MSG_REQUEST)	// Si el client demana un bloc, carreguem el número del bloc que demana
 				for (uint8_t i = 12; i > 4; i--)
@@ -454,21 +471,32 @@ int server(char* path, char* port)
 					block_number <<= 8;
 					block_number |= message[i];
 				}
+			log_message(LOG_DEBUG, "Block number loaded");
 
 			if (torrent.block_map[block_number] == 0)
-				message[4] == MSG_RESPONSE_NA;
+			{
+				message[4] = MSG_RESPONSE_NA;
+				log_message(LOG_DEBUG, "Block not available :-(");
+			}
 			else
+			{
 				message[4] = MSG_RESPONSE_OK;
+				log_message(LOG_DEBUG, "Block available :-)");
+			}
 
+			log_message(LOG_DEBUG, "Preparing to send() (1st)");
 			if(send(s1, message, RAW_MESSAGE_SIZE, 0) == -1)//Aquí només diem si tenim o no el bloc
 			{
-				perror("Error: send() function exited with code -1");
+				perror("Error:  1st send() function exited with code -1");
+				log_printf(LOG_DEBUG, "errno = %d", errno);
 				return -1;
 			}
+			log_message(LOG_DEBUG, "El primer send() funciona be, mama mia");
+
 			if (torrent.block_map[block_number] == 0)
-			{
-				exit(0);
-			}
+				continue; // block not available
+
+
 			// data_message conté el bloc a enviar
 			uint8_t data_message[(file + block_number)->size];
 
@@ -476,18 +504,27 @@ int server(char* path, char* port)
 			//Assignem a data_message el contingut de file
 			memcpy(data_message, (file + block_number)->data, (file + block_number)->size);
 
+			uint64_t block_size = (file + block_number)->size;
+			log_printf(LOG_DEBUG, "s1 = %d", s1);
 
-			if(send(s1, message, (file + block_number)->size, 0) == -1)//Ara enviem tot el bloc
+			log_printf(LOG_DEBUG, "errno = %d", errno);
+
+
+			if(send(s1, data_message, block_size, 0) == -1)//Ara enviem tot el bloc
 			{
-				perror("Error: send() function exited with code -1");
+				perror("Error: 2nd send() function exited with code -1");
+				log_printf(LOG_DEBUG, "errno = %d", errno);
 				return -1;
 			}
-			
+
+		
 			if(close(s1) == -1)
 			{
 				perror("Error: close(sock) exited with code -1");
+				log_printf(LOG_DEBUG, "errno = %d", errno);
 				return -1;
 			}
+		
 
 			exit(0);
 		}
