@@ -346,7 +346,7 @@ int server(char* path, char* port)
 	//1. Load a metainfo file
 	if (create_torrent_from_metainfo_file (metainfoFileName, &torrent ,fileName ) == -1)
 	{
-		log_message(LOG_INFO, "Could load metainfo file correctly");
+		log_message(LOG_INFO, "Could not load metainfo file correctly");
 		return -1;
 	}
 
@@ -456,67 +456,68 @@ int server(char* path, char* port)
 			log_printf(LOG_DEBUG, "sock closed succesfully");
 			*/
 			uint64_t block_number = 0;
-			
-			if(recv(s1, message, RAW_MESSAGE_SIZE, 0) != RAW_MESSAGE_SIZE)
+			for(int c = 0;c < 3; c++)
 			{
-				perror("Error: recv() function exited with code -1");
-				log_printf(LOG_DEBUG, "errno = %d", errno);
-				return -1;
-			}
-			log_printf(LOG_DEBUG, "recv()'d successfully");
-
-			if(message[4] == MSG_REQUEST)	// Si el client demana un bloc, carreguem el número del bloc que demana
-				for (uint8_t i = 12; i > 4; i--)
+				if(recv(s1, message, RAW_MESSAGE_SIZE, 0) != RAW_MESSAGE_SIZE)
 				{
-					block_number <<= 8;
-					block_number |= message[i];
+					perror("Error: recv() function exited with code -1");
+					log_printf(LOG_DEBUG, "errno = %d", errno);
+					return -1;
 				}
-			log_message(LOG_DEBUG, "Block number loaded");
+				log_printf(LOG_DEBUG, "recv()'d successfully");
 
-			if (torrent.block_map[block_number] == 0)
-			{
-				message[4] = MSG_RESPONSE_NA;
-				log_message(LOG_DEBUG, "Block not available :-(");
-			}
-			else
-			{
-				message[4] = MSG_RESPONSE_OK;
-				log_message(LOG_DEBUG, "Block available :-)");
-			}
+				if(message[4] == MSG_REQUEST)	// Si el client demana un bloc, carreguem el número del bloc que demana
+					for (uint8_t i = 12; i > 4; i--)
+					{
+						block_number <<= 8;
+						block_number |= message[i];
+					}
+				log_message(LOG_DEBUG, "Block number loaded");
 
-			log_message(LOG_DEBUG, "Preparing to send() (1st)");
-			if(send(s1, message, RAW_MESSAGE_SIZE, 0) == -1)//Aquí només diem si tenim o no el bloc
-			{
-				perror("Error:  1st send() function exited with code -1");
+				if (torrent.block_map[block_number] == 0)
+				{
+					message[4] = MSG_RESPONSE_NA;
+					log_message(LOG_DEBUG, "Block not available :-(");
+				}
+				else
+				{
+					message[4] = MSG_RESPONSE_OK;
+					log_message(LOG_DEBUG, "Block available :-)");
+				}
+
+				log_message(LOG_DEBUG, "Preparing to send() (1st)");
+				if(send(s1, message, RAW_MESSAGE_SIZE, 0) == -1)//Aquí només diem si tenim o no el bloc
+				{
+					perror("Error:  1st send() function exited with code -1");
+					log_printf(LOG_DEBUG, "errno = %d", errno);
+					return -1;
+				}
+				log_message(LOG_DEBUG, "El primer send() funciona");
+
+				if (torrent.block_map[block_number] == 0)
+					continue; // block not available
+
+
+				// data_message conté el bloc a enviar
+				uint8_t data_message[(file + block_number)->size];
+
+				
+				//Assignem a data_message el contingut de file
+				memcpy(data_message, (file + block_number)->data, (file + block_number)->size);
+
+				uint64_t block_size = (file + block_number)->size;
+				log_printf(LOG_DEBUG, "s1 = %d", s1);
+
 				log_printf(LOG_DEBUG, "errno = %d", errno);
-				return -1;
+
+
+				if(send(s1, data_message, block_size, 0) == -1)//Ara enviem tot el bloc
+				{
+					perror("Error: 2nd send() function exited with code -1");
+					log_printf(LOG_DEBUG, "errno = %d", errno);
+					return -1;
+				}
 			}
-			log_message(LOG_DEBUG, "El primer send() funciona be, mama mia");
-
-			if (torrent.block_map[block_number] == 0)
-				continue; // block not available
-
-
-			// data_message conté el bloc a enviar
-			uint8_t data_message[(file + block_number)->size];
-
-			
-			//Assignem a data_message el contingut de file
-			memcpy(data_message, (file + block_number)->data, (file + block_number)->size);
-
-			uint64_t block_size = (file + block_number)->size;
-			log_printf(LOG_DEBUG, "s1 = %d", s1);
-
-			log_printf(LOG_DEBUG, "errno = %d", errno);
-
-
-			if(send(s1, data_message, block_size, 0) == -1)//Ara enviem tot el bloc
-			{
-				perror("Error: 2nd send() function exited with code -1");
-				log_printf(LOG_DEBUG, "errno = %d", errno);
-				return -1;
-			}
-
 		
 			if(close(s1) == -1)
 			{
