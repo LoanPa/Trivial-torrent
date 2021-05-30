@@ -456,7 +456,7 @@ int server(char* path, char* port)
 			log_printf(LOG_DEBUG, "sock closed succesfully");
 			*/
 			uint64_t block_number = 0;
-			for(int c = 0;c < 3; c++)
+			while(s1)
 			{
 				if(recv(s1, message, RAW_MESSAGE_SIZE, 0) != RAW_MESSAGE_SIZE)
 				{
@@ -518,14 +518,15 @@ int server(char* path, char* port)
 					return -1;
 				}
 			}
-		
+			
+			/*
 			if(close(s1) == -1)
 			{
 				perror("Error: close(sock) exited with code -1");
 				log_printf(LOG_DEBUG, "errno = %d", errno);
 				return -1;
 			}
-		
+			*/
 
 			exit(0);
 		}
