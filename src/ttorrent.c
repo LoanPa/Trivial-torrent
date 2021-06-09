@@ -463,9 +463,8 @@ int server(char* path, char* port)
 
 				if(recv(s1, message, RAW_MESSAGE_SIZE, 0) != RAW_MESSAGE_SIZE)
 				{
-					perror("Error: recv() function exited with code -1");
-					log_printf(LOG_INFO, "errno = %d", errno);
-					return -1;
+					log_printf(LOG_INFO, "Client closed the connection");
+					exit(0);
 				}
 				log_printf(LOG_DEBUG, "recv()'d successfully");
 				
