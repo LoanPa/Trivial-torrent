@@ -281,8 +281,10 @@ int client(char* path)
 					if (store_block(&torrent, block_number, &recvd_block) == -1)
 						perror("Error: block was not stored correctly");	
 					else
+					{
 						torrent.block_map[block_number] = 1;
-					
+						log_printf(LOG_INFO, "Block %d stored successfully :-D", block_number);
+					}
 											
 				}// if del MSG_RESPONSE_OK
 			}// Aquí acaba el if de els blocs que no tenim
