@@ -483,7 +483,7 @@ int server(char* path, char* port)
 				if(message[4] == MSG_REQUEST)	// Si el client demana un bloc, carreguem el número del bloc que demana
 					for (uint8_t i = 4; i < 12; i++)
 					{
-						block_number >>= 8;
+						block_number <<= 8;
 						block_number |= message[i];
 						log_printf(LOG_DEBUG, "Loading block number %d...", block_number);
 					}
