@@ -458,7 +458,7 @@ int server(char* path, char* port)
 		if(pid == 0)
 		{
 			log_printf(LOG_DEBUG, "Child process");
-			/*
+			
 			if(close(sock) == -1)
 			{
 				perror("Error: close(sock) exited with code -1");
@@ -466,7 +466,7 @@ int server(char* path, char* port)
 				return -1;
 			}
 			log_printf(LOG_DEBUG, "sock closed succesfully");
-			*/
+			
 		
 			while(s1)
 			{
