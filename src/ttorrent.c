@@ -369,7 +369,7 @@ int server(char* path, char* port)
 			else
 				log_printf(LOG_INFO, "Block number %d not available", block_number);
 		}
-		log_printf(LOG_INFO, " %d/%d blocks available", number_of_blocks, torrent.block_count);
+		log_printf(LOG_INFO, "%d/%d blocks available", number_of_blocks, torrent.block_count);
 	}
 
 
@@ -479,12 +479,13 @@ int server(char* path, char* port)
 					return -1;
 				}
 				log_printf(LOG_DEBUG, "recv()'d successfully");
-
+				
 				if(message[4] == MSG_REQUEST)	// Si el client demana un bloc, carreguem el número del bloc que demana
 					for (uint8_t i = 12; i > 4; i--)
 					{
 						block_number <<= 8;
 						block_number |= message[i];
+						log_printf(LOG_DEBUG, "Loading block number %d...", block_number);
 					}
 				log_printf(LOG_DEBUG, "Block number %d loaded", block_number);
 
