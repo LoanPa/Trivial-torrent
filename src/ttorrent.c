@@ -168,20 +168,9 @@ int client(char* path)
 		
 		
 		
-		
-		
 		// Definim port
 		sockaddress_peer.sin_port = (torrent.peers + peerNumber)->peer_port;
-		// Definim adreça
-		/*
-		sockaddress_peer.sin_addr.s_addr = (torrent.peers + peerNumber)->peer_address[3];
-		sockaddress_peer.sin_addr.s_addr = sockaddress_peer.sin_addr.s_addr << 8;
-		sockaddress_peer.sin_addr.s_addr |= (torrent.peers + peerNumber)->peer_address[2];
-		sockaddress_peer.sin_addr.s_addr = sockaddress_peer.sin_addr.s_addr << 8;
-		sockaddress_peer.sin_addr.s_addr |= (torrent.peers + peerNumber)->peer_address[1];
-		sockaddress_peer.sin_addr.s_addr = sockaddress_peer.sin_addr.s_addr << 8;
-		sockaddress_peer.sin_addr.s_addr |= (torrent.peers + peerNumber)->peer_address[0];
-		*/
+		
 		
 		// Definim adreça
 		sockaddress_peer.sin_addr.s_addr = (torrent.peers + peerNumber)->peer_address[3];
@@ -213,14 +202,14 @@ int client(char* path)
 				//Network byte order = Big endian
 				// Big endian -> Més significatiu primer
 
-				message[5] = (uint8_t) (block_number >> 56);
-				message[6] = (uint8_t) (block_number >> 48);
-				message[7] = (uint8_t) (block_number >> 40);
-				message[8] = (uint8_t) (block_number >> 32);
-				message[9] = (uint8_t) (block_number >> 24);
-				message[10] = (uint8_t) (block_number >> 16);
-				message[11] = (uint8_t) (block_number >> 8);
-				message[12] = (uint8_t) (block_number);
+				message[5] = (uint8_t) (block_number >> 56) & 0xff;
+				message[6] = (uint8_t) (block_number >> 48) & 0xff;
+				message[7] = (uint8_t) (block_number >> 40) & 0xff;
+				message[8] = (uint8_t) (block_number >> 32) & 0xff;
+				message[9] = (uint8_t) (block_number >> 24) & 0xff;
+				message[10] = (uint8_t) (block_number >> 16) & 0xff;
+				message[11] = (uint8_t) (block_number >> 8) & 0xff;
+				message[12] = (uint8_t) (block_number) & 0xff;
 				
 				if (send(sock, message, sizeof(message), 0) == -1)
 				{
