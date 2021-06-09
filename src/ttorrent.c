@@ -253,11 +253,14 @@ int client(char* path)
 					
 					
 					struct block_t recvd_block;
-					//Buffer per a contenir el bloc
-					uint8_t data_message[MAX_BLOCK_SIZE];
+				
 					
 					
 					uint64_t expected_block_length = get_block_size(&torrent, block_number);
+
+					//Buffer per a contenir el bloc
+					uint8_t data_message[expected_block_length];
+
 					if (recv(sock, &data_message, expected_block_length , 0) <= 0)
 					{
 						perror("Error: 2nd recv() function exited with code -1");
@@ -351,14 +354,23 @@ int server(char* path, char* port)
 	}
 
 
-	struct block_t file[torrent.block_count];
 
 	log_message(LOG_INFO, "Checking disck file...");
-
-	for (uint64_t block_number = 0; block_number < torrent.block_count; block_number++)
-			load_block(&torrent, block_number, &file[block_number]);
-	
-
+	if (1)
+	{
+		uint64_t number_of_blocks = 0;
+		for (uint64_t block_number = 0; block_number < torrent.block_count; block_number++)
+		{
+			if (torrent.block_map[block_number])
+			{
+				log_printf(LOG_INFO, "Block number %d available", block_number);
+				++number_of_blocks;
+			}
+			else
+				log_printf(LOG_INFO, "Block number %d not available", block_number);
+		}
+		log_printf(LOG_INFO, " %d/%d blocks available", number_of_blocks, torrent.block_count);
+	}
 
 
 	// TODO: tot això  ⤵
@@ -367,12 +379,11 @@ int server(char* path, char* port)
 	+		metainfo_file function).
 	+			a. Check for the existence of the associated downloaded file.
 	+			b. Check which blocks are correct using the SHA256 hashes in the metainfo file.
-	-	2. Forever listen to incoming connections, and for each connection:
-	*			a. Wait for a message.
-	*			b. If a message requests a block that can be served (correct hash), respond with the appropriate message,
-	*				followed by the raw block data.
-	*			c. Otherwise, respond with a message signaling the unavailability of the block.
-	*			
+	+	2. Forever listen to incoming connections, and for each connection:
+	+			a. Wait for a message.
+	+			b. If a message requests a block that can be served (correct hash), respond with the appropriate message,
+	-				followed by the raw block data.
+	+			c. Otherwise, respond with a message signaling the unavailability of the block.			
 	*/
 
 	struct sockaddr_in sockaddress, s1address;
@@ -413,6 +424,7 @@ int server(char* path, char* port)
 		socklen_t addrlen = sizeof(struct sockaddr_in);
 		
 		int s1 = accept(sock, (struct sockaddr *) &s1address, &addrlen);
+
 		if(s1 == -1)
 		{
 			perror("Error: accept() function exited with code -1");
@@ -455,9 +467,11 @@ int server(char* path, char* port)
 			}
 			log_printf(LOG_DEBUG, "sock closed succesfully");
 			*/
-			uint64_t block_number = 0;
+		
 			while(s1)
 			{
+				uint64_t block_number = 0;
+
 				if(recv(s1, message, RAW_MESSAGE_SIZE, 0) != RAW_MESSAGE_SIZE)
 				{
 					perror("Error: recv() function exited with code -1");
@@ -472,8 +486,9 @@ int server(char* path, char* port)
 						block_number <<= 8;
 						block_number |= message[i];
 					}
-				log_message(LOG_DEBUG, "Block number loaded");
+				log_printf(LOG_DEBUG, "Block number %d loaded", block_number);
 
+				log_printf(LOG_DEBUG, "Block number %d", torrent.block_map[block_number]);
 				if (torrent.block_map[block_number] == 0)
 				{
 					message[4] = MSG_RESPONSE_NA;
@@ -495,38 +510,35 @@ int server(char* path, char* port)
 				log_message(LOG_DEBUG, "El primer send() funciona");
 
 				if (torrent.block_map[block_number] == 0)
+				{
+					log_printf(LOG_DEBUG, "Block %d not available", block_number);
 					continue; // block not available
+				}
 
+				// data_message conté el bloc a enviar	
+				struct block_t requested_block;
+				load_block(&torrent,block_number, &requested_block);
 
-				// data_message conté el bloc a enviar
-				uint8_t data_message[(file + block_number)->size];
+				//uint64_t data_message;
+				
 
 				
-				//Assignem a data_message el contingut de file
-				memcpy(data_message, (file + block_number)->data, (file + block_number)->size);
+				//Assignem a data_message el contingut de requested_block.data
+				//memcpy(data_message, requested_block.data, requested_block.size);
 
-				uint64_t block_size = (file + block_number)->size;
-				log_printf(LOG_DEBUG, "s1 = %d", s1);
+				
+				log_printf(LOG_DEBUG, "Block size = %d", requested_block.size);
 
 				log_printf(LOG_DEBUG, "errno = %d", errno);
 
 
-				if(send(s1, data_message, block_size, 0) == -1)//Ara enviem tot el bloc
+				if(send(s1, requested_block.data, requested_block.size, 0) == -1)//Ara enviem tot el bloc
 				{
 					perror("Error: 2nd send() function exited with code -1");
 					log_printf(LOG_DEBUG, "errno = %d", errno);
 					return -1;
 				}
 			}
-			
-			/*
-			if(close(s1) == -1)
-			{
-				perror("Error: close(sock) exited with code -1");
-				log_printf(LOG_DEBUG, "errno = %d", errno);
-				return -1;
-			}
-			*/
 
 			exit(0);
 		}
