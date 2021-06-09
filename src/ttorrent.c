@@ -493,12 +493,12 @@ int server(char* path, char* port)
 				if (torrent.block_map[block_number] == 0)
 				{
 					message[4] = MSG_RESPONSE_NA;
-					log_message(LOG_DEBUG, "Block not available :-(");
+					log_message(LOG_INFO, "Block not available :-(");
 				}
 				else
 				{
 					message[4] = MSG_RESPONSE_OK;
-					log_message(LOG_DEBUG, "Block available :-)");
+					log_message(LOG_INFO, "Block available :-)");
 				}
 
 				log_message(LOG_DEBUG, "Preparing to send() (1st)");
@@ -515,23 +515,9 @@ int server(char* path, char* port)
 					log_printf(LOG_DEBUG, "Block %d not available", block_number);
 					continue; // block not available
 				}
-
-				// data_message conté el bloc a enviar	
+	
 				struct block_t requested_block;
 				load_block(&torrent,block_number, &requested_block);
-
-				//uint64_t data_message;
-				
-
-				
-				//Assignem a data_message el contingut de requested_block.data
-				//memcpy(data_message, requested_block.data, requested_block.size);
-
-				
-				log_printf(LOG_DEBUG, "Block size = %d", requested_block.size);
-
-				log_printf(LOG_DEBUG, "errno = %d", errno);
-
 
 				if(send(s1, requested_block.data, requested_block.size, 0) == -1)//Ara enviem tot el bloc
 				{
