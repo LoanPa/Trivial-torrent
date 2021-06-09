@@ -458,7 +458,7 @@ int server(char* path, char* port)
 		if(pid == 0)
 		{
 			log_printf(LOG_DEBUG, "Child process");
-			/*
+			
 			if(close(sock) == -1)
 			{
 				perror("Error: close(sock) exited with code -1");
@@ -466,7 +466,7 @@ int server(char* path, char* port)
 				return -1;
 			}
 			log_printf(LOG_DEBUG, "sock closed succesfully");
-			*/
+			
 		
 			while(s1)
 			{
@@ -481,7 +481,7 @@ int server(char* path, char* port)
 				log_printf(LOG_DEBUG, "recv()'d successfully");
 				
 				if(message[4] == MSG_REQUEST)	// Si el client demana un bloc, carreguem el número del bloc que demana
-					for (uint8_t i = 5; i < 13; i++)
+					for (uint8_t i = 4; i < 12; i++)
 					{
 						block_number <<= 8;
 						block_number |= message[i];
