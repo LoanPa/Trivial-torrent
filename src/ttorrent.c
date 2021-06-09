@@ -214,7 +214,7 @@ int client(char* path)
 				if (send(sock, message, sizeof(message), 0) == -1)
 				{
 						/* 
-						*	No estic segur si s'hauria de provar amb un altre block o directament canviar de peer
+						*	No estic segur si s'hauria de provar amb un altre bloc o directament canviar de peer
 						* Considerarem la segona opció
 						*/
 					perror("Error: send() function exited with code -1");
@@ -240,17 +240,15 @@ int client(char* path)
 				if (message[4] == MSG_RESPONSE_OK)
 				{
 					
-					
 					struct block_t recvd_block;
-				
 					
 					
 					uint64_t expected_block_length = get_block_size(&torrent, block_number);
 
 					//Buffer per a contenir el bloc
-					uint8_t data_message[expected_block_length];
+					//uint8_t data_message[expected_block_length];
 
-					if (recv(sock, &data_message, expected_block_length , 0) <= 0)
+					if (recv(sock, recvd_block.data, expected_block_length , 0) <= 0)
 					{
 						perror("Error: 2nd recv() function exited with code -1");
 						continue; //Provem amb un altre bloc però amb el mateix peer
@@ -262,7 +260,7 @@ int client(char* path)
 					
 
 					//Assignem a recvd_block el contingut de data_message
-					memcpy(recvd_block.data, data_message, recvd_block.size);
+					//memcpy(recvd_block.data, data_message, recvd_block.size);
 					
 					
 					
