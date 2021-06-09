@@ -481,7 +481,7 @@ int server(char* path, char* port)
 				log_printf(LOG_DEBUG, "recv()'d successfully");
 				
 				if(message[4] == MSG_REQUEST)	// Si el client demana un bloc, carreguem el número del bloc que demana
-					for (uint8_t i = 4; i < 12; i++)
+					for (uint8_t i = 5; i < 13; i++)
 					{
 						block_number <<= 8;
 						block_number |= message[i];
