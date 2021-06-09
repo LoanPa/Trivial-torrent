@@ -428,7 +428,7 @@ int server(char* path, char* port)
 		if(s1 == -1)
 		{
 			perror("Error: accept() function exited with code -1");
-			log_printf(LOG_DEBUG, "errno = %d", errno);
+			log_printf(LOG_INFO, "errno = %d", errno);
 			return -1;
 		}
 		
@@ -447,7 +447,7 @@ int server(char* path, char* port)
 			if(close(s1 == -1))
 			{
 				perror("Error: close(s1) exited with code -1");
-				log_printf(LOG_DEBUG, "errno = %d", errno);
+				log_printf(LOG_INFO, "errno = %d", errno);
 
 				return -1;
 			}
@@ -462,7 +462,7 @@ int server(char* path, char* port)
 			if(close(sock) == -1)
 			{
 				perror("Error: close(sock) exited with code -1");
-				log_printf(LOG_DEBUG, "errno = %d", errno);
+				log_printf(LOG_INFO, "errno = %d", errno);
 				return -1;
 			}
 			log_printf(LOG_DEBUG, "sock closed succesfully");
@@ -475,7 +475,7 @@ int server(char* path, char* port)
 				if(recv(s1, message, RAW_MESSAGE_SIZE, 0) != RAW_MESSAGE_SIZE)
 				{
 					perror("Error: recv() function exited with code -1");
-					log_printf(LOG_DEBUG, "errno = %d", errno);
+					log_printf(LOG_INFO, "errno = %d", errno);
 					return -1;
 				}
 				log_printf(LOG_DEBUG, "recv()'d successfully");
@@ -501,11 +501,11 @@ int server(char* path, char* port)
 					log_message(LOG_INFO, "Block available :-)");
 				}
 
-				log_message(LOG_DEBUG, "Preparing to send() (1st)");
+				log_message(LOG_DEBUG, "Preparing to send() the answer");
 				if(send(s1, message, RAW_MESSAGE_SIZE, 0) == -1)//Aquí només diem si tenim o no el bloc
 				{
 					perror("Error:  1st send() function exited with code -1");
-					log_printf(LOG_DEBUG, "errno = %d", errno);
+					log_printf(LOG_INFO, "errno = %d", errno);
 					return -1;
 				}
 				log_message(LOG_DEBUG, "El primer send() funciona");
@@ -522,7 +522,7 @@ int server(char* path, char* port)
 				if(send(s1, requested_block.data, requested_block.size, 0) == -1)//Ara enviem tot el bloc
 				{
 					perror("Error: 2nd send() function exited with code -1");
-					log_printf(LOG_DEBUG, "errno = %d", errno);
+					log_printf(LOG_INFO, "errno = %d", errno);
 					return -1;
 				}
 			}
