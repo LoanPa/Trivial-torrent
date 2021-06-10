@@ -1,0 +1,130 @@
+                        dropping client
+        polling...
+        ...poll has returned with events...
+                processing pollfd index 0 (fd = 4, .events = 1, .revents = 1)
+                New connection incoming
+accept(4, {sa_family=AF_INET6, sin6_port=htons(36194), sin6_flowinfo=htonl(0), inet_pton(AF_INET6, "::ffff:127.0.0.1", &sin6_addr), sin6_scope_id=0}, [28]) = 5
+                        accept ok
+setsockopt(5, SOL_SOCKET, SO_RCVLOWAT, [13], 4) = 0
+                        setsockopt[SO_RCVLOWAT=13] successful
+                        fcntl[O_NONBLOCK] successful
+        polling...
+        ...poll has returned with events...
+                processing pollfd index 1 (fd = 5, .events = 1, .revents = 1)
+                POLLIN event
+recvfrom(5, "12\34\336\0\0\0\0\0\0\0\0\1", 13, 0, NULL, NULL) = 13
+                        recv'd message from client
+                        Request is { magic_number = 0xDE1C3231, block_number = 1, message_code = 0 }
+                        Response will be { magic_number = 0xDE1C3231, block_number = 1, message_code = 1 }
+                        (we will handle this latter; marking this fd for POLLOUT)
+        polling...
+        ...poll has returned with events...
+                processing pollfd index 1 (fd = 5, .events = 4, .revents = 4)
+                POLLOUT event
+sendto(5, "12\34\336\1\0\0\0\0\0\0\0\1\206\232\321Qc\364Y\354\250w\256<CdN\33\345\375\270"..., 65549, MSG_NOSIGNAL, NULL, 0) = 65549
+                        Sending prepared response...
+                        ...65549 of 65549 bytes sent
+        polling...
+        ...poll has returned with events...
+                processing pollfd index 1 (fd = 5, .events = 1, .revents = 1)
+                POLLIN event
+recvfrom(5, "12\34\336\0\0\0\0\0\0\0\0\2", 13, 0, NULL, NULL) = 13
+                        recv'd message from client
+                        Request is { magic_number = 0xDE1C3231, block_number = 2, message_code = 0 }
+                        Response will be { magic_number = 0xDE1C3231, block_number = 2, message_code = 1 }
+                        (we will handle this latter; marking this fd for POLLOUT)
+        polling...
+        ...poll has returned with events...
+                processing pollfd index 1 (fd = 5, .events = 4, .revents = 28)
+getsockopt(5, SOL_SOCKET, SO_ERROR, [ECONNRESET], [4]) = 0
+                POLLERR event (Connection reset by peer)
+                        dropping client
+        polling...
+        ...poll has returned with events...
+                processing pollfd index 0 (fd = 4, .events = 1, .revents = 1)
+                New connection incoming
+accept(4, {sa_family=AF_INET6, sin6_port=htons(36200), sin6_flowinfo=htonl(0), inet_pton(AF_INET6, "::ffff:127.0.0.1", &sin6_addr), sin6_scope_id=0}, [28]) = 5
+                        accept ok
+setsockopt(5, SOL_SOCKET, SO_RCVLOWAT, [13], 4) = 0
+                        setsockopt[SO_RCVLOWAT=13] successful
+                        fcntl[O_NONBLOCK] successful
+        polling...
+        ...poll has returned with events...
+                processing pollfd index 1 (fd = 5, .events = 1, .revents = 1)
+                POLLIN event
+recvfrom(5, "12\34\336\0\0\0\0\0\0\0\0\1", 13, 0, NULL, NULL) = 13
+                        recv'd message from client
+                        Request is { magic_number = 0xDE1C3231, block_number = 1, message_code = 0 }
+                        Response will be { magic_number = 0xDE1C3231, block_number = 1, message_code = 1 }
+                        (we will handle this latter; marking this fd for POLLOUT)
+        polling...
+        ...poll has returned with events...
+                processing pollfd index 1 (fd = 5, .events = 4, .revents = 4)
+                POLLOUT event
+sendto(5, "12\34\336\1\0\0\0\0\0\0\0\1\206\232\321Qc\364Y\354\250w\256<CdN\33\345\375\270"..., 65549, MSG_NOSIGNAL, NULL, 0) = 65549
+                        Sending prepared response...
+                        ...65549 of 65549 bytes sent
+        polling...
+        ...poll has returned with events...
+                processing pollfd index 1 (fd = 5, .events = 1, .revents = 1)
+                POLLIN event
+recvfrom(5, "12\34\336\0\0\0\0\0\0\0\0\2", 13, 0, NULL, NULL) = 13
+                        recv'd message from client
+                        Request is { magic_number = 0xDE1C3231, block_number = 2, message_code = 0 }
+                        Response will be { magic_number = 0xDE1C3231, block_number = 2, message_code = 1 }
+                        (we will handle this latter; marking this fd for POLLOUT)
+        polling...
+        ...poll has returned with events...
+                processing pollfd index 1 (fd = 5, .events = 4, .revents = 28)
+getsockopt(5, SOL_SOCKET, SO_ERROR, [ECONNRESET], [4]) = 0
+                POLLERR event (Connection reset by peer)
+                        dropping client
+        polling...
+        ...poll has returned with events...
+                processing pollfd index 0 (fd = 4, .events = 1, .revents = 1)
+                New connection incoming
+accept(4, {sa_family=AF_INET6, sin6_port=htons(36206), sin6_flowinfo=htonl(0), inet_pton(AF_INET6, "::ffff:127.0.0.1", &sin6_addr), sin6_scope_id=0}, [28]) = 5
+                        accept ok
+setsockopt(5, SOL_SOCKET, SO_RCVLOWAT, [13], 4) = 0
+                        setsockopt[SO_RCVLOWAT=13] successful
+                        fcntl[O_NONBLOCK] successful
+        polling...
+        ...poll has returned with events...
+                processing pollfd index 1 (fd = 5, .events = 1, .revents = 1)
+                POLLIN event
+recvfrom(5, "12\34\336\0\0\0\0\0\0\0\0\1", 13, 0, NULL, NULL) = 13
+                        recv'd message from client
+                        Request is { magic_number = 0xDE1C3231, block_number = 1, message_code = 0 }
+                        Response will be { magic_number = 0xDE1C3231, block_number = 1, message_code = 1 }
+                        (we will handle this latter; marking this fd for POLLOUT)
+        polling...
+        ...poll has returned with events...
+                processing pollfd index 1 (fd = 5, .events = 4, .revents = 4)
+                POLLOUT event
+sendto(5, "12\34\336\1\0\0\0\0\0\0\0\1\206\232\321Qc\364Y\354\250w\256<CdN\33\345\375\270"..., 65549, MSG_NOSIGNAL, NULL, 0) = 65549
+                        Sending prepared response...
+                        ...65549 of 65549 bytes sent
+        polling...
+        ...poll has returned with events...
+                processing pollfd index 1 (fd = 5, .events = 1, .revents = 1)
+                POLLIN event
+recvfrom(5, "12\34\336\0\0\0\0\0\0\0\0\2", 13, 0, NULL, NULL) = 13
+                        recv'd message from client
+                        Request is { magic_number = 0xDE1C3231, block_number = 2, message_code = 0 }
+                        Response will be { magic_number = 0xDE1C3231, block_number = 2, message_code = 1 }
+                        (we will handle this latter; marking this fd for POLLOUT)
+        polling...
+        ...poll has returned with events...
+                processing pollfd index 1 (fd = 5, .events = 4, .revents = 4)
+                POLLOUT event
+sendto(5, "12\34\336\1\0\0\0\0\0\0\0\2Da\330+Y\333\300_6\307\335|_6\376\210\366Q\343"..., 65526, MSG_NOSIGNAL, NULL, 0) = 65526
+                        Sending prepared response...
+                        ...65526 of 65526 bytes sent
+        polling...
+        ...poll has returned with events...
+                processing pollfd index 1 (fd = 5, .events = 1, .revents = 1)
+                POLLIN event
+recvfrom(5, "", 13, 0, NULL, NULL)      = 0
+                        client closed connection
+        polling...
+
