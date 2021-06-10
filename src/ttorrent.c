@@ -430,8 +430,7 @@ int server(char* path, char* port)
 			perror("Error: fork() function exited with code -1");
 			return -1;
 		}
-		log_printf(LOG_DEBUG, "s1 = %d", s1);
-
+		
 		if (pid > 0)	/* parent process */
 		{
 			log_message(LOG_DEBUG, "Parent process");
@@ -450,7 +449,7 @@ int server(char* path, char* port)
 		if(pid == 0)
 		{
 			log_printf(LOG_DEBUG, "Child process");
-			
+			/*
 			if(close(sock) == -1)
 			{
 				perror("Error: close(sock) exited with code -1");
@@ -458,6 +457,7 @@ int server(char* path, char* port)
 				return -1;
 			}
 			log_printf(LOG_DEBUG, "sock closed succesfully");
+			*/
 			
 		
 			while(s1)
