@@ -214,7 +214,7 @@ int client(char* path)
 				if (send(sock, message, sizeof(message), 0) == -1)
 				{
 						/* 
-						*	No estic segur si s'hauria de provar amb un altre bloc o directament canviar de peer
+						* No estic segur si s'hauria de provar amb un altre bloc o directament canviar de peer
 						* Considerarem la segona opció
 						*/
 					perror("Error: send() function exited with code -1");
@@ -248,7 +248,7 @@ int client(char* path)
 					//Buffer per a contenir el bloc
 					uint8_t data_message[expected_block_length];
 
-					if (recv(sock, data_message, expected_block_length , 0) <= 0)
+					if (recv(sock, data_message, expected_block_length , MSG_WAITALL) <= 0)
 					{
 						perror("Error: 2nd recv() function exited with code -1");
 						continue; //Provem amb un altre bloc però amb el mateix peer
@@ -267,22 +267,11 @@ int client(char* path)
 					//Assignem a recvd_block el contingut de data_message
 					//memcpy(recvd_block.data, data_message, recvd_block.size);
 					
-					
-					
-					
-					/*
-					PER ON ANAVA:
-					tenim aquest error: ttorrent: src/file_io.c:438: store_block: Assertion `block->size > 0' failed.
-					i és perque el downloaded_block no està inicialitzat i hauria de contenir el bloc rebut.
-					
-					També crec que s'hauria de fer un altre buffer a part del message que contingues el bloc 
-					
-					
-					Acabo d'adonar-me que primer es rep la confirmació de que el server te el bloc i després s'envia el bloc
-					*/
-					
 					if (store_block(&torrent, block_number, &recvd_block) == -1)
+					{
 						perror("Error: block was not stored correctly");	
+						log_printf(LOG_INFO, "errno = %d", errno);
+					}
 					else
 					{
 						torrent.block_map[block_number] = 1;
@@ -479,11 +468,10 @@ int server(char* path, char* port)
 					{
 						block_number <<= 8;
 						block_number |= message[i];
-						log_printf(LOG_DEBUG, "Loading block number %d...", block_number);
 					}
 				log_printf(LOG_DEBUG, "Block number %d loaded", block_number);
 
-				log_printf(LOG_DEBUG, "Block number %d", torrent.block_map[block_number]);
+				log_printf(LOG_DEBUG, "Block availability: ", torrent.block_map[block_number]);
 				if (torrent.block_map[block_number] == 0)
 				{
 					message[4] = MSG_RESPONSE_NA;
