@@ -409,13 +409,12 @@ int server(char* path, char* port)
 	uint8_t message[RAW_MESSAGE_SIZE];
 
 	
-
+	socklen_t addrlen = sizeof(struct sockaddr_in);
+	int s1;
 	for(;;) //Forever listen to incoming connections
 	{
-
-		socklen_t addrlen = sizeof(struct sockaddr_in);
 		
-		int s1 = accept(sock, (struct sockaddr *) &s1address, &addrlen);
+		s1 = accept(sock, (struct sockaddr *) &s1address, &addrlen);
 
 		if(s1 == -1)
 		{
@@ -449,7 +448,7 @@ int server(char* path, char* port)
 		if(pid == 0)
 		{
 			log_printf(LOG_DEBUG, "Child process");
-			/*
+			
 			if(close(sock) == -1)
 			{
 				perror("Error: close(sock) exited with code -1");
@@ -457,7 +456,7 @@ int server(char* path, char* port)
 				return -1;
 			}
 			log_printf(LOG_DEBUG, "sock closed succesfully");
-			*/
+			
 			
 		
 			while(s1)
