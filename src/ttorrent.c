@@ -460,7 +460,7 @@ int server(char* path, char* port)
 			
 			
 		
-			while(s1)
+			while(1)
 			{
 	
 				log_printf(LOG_DEBUG, "Dins el while");
@@ -469,7 +469,8 @@ int server(char* path, char* port)
 				if(recv(s1, message, RAW_MESSAGE_SIZE, 0) != RAW_MESSAGE_SIZE)
 				{
 					log_printf(LOG_INFO, "Client closed the connection");
-					continue;
+
+					exit(0);
 				}
 				log_printf(LOG_DEBUG, "recv()'d successfully");
 				
