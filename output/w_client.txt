@@ -1,66 +1,35 @@
-loan@loan-aod270:~/Desktop/trivial-torrent-LoanPa$ strace -e network bin/ttorrent torrent_samples/client/test_file.ttorrent 
-Trivial Torrent (build Jun 10 2021 10:06:18) by L. Panareda
-Loading contents of metainfo file torrent_samples/client/test_file.ttorrent...
-        (comment skipped)
-        (comment skipped)
-        Hash is: 07100096f4869dafd8aad313eda47d2f49f130f9f85042001bf2af3d5b2efb26
-        (comment skipped)
-        Downloaded file size is: 196585
-        (comment skipped)
-        Peer count is: 3
-        (comment skipped)
-        (comment skipped)
-        Hash is: 6a1fc46a219a5e0658ed8f6d8a77d753d504415fe01d1fecd30f9f66700eeb73
-        (comment skipped)
-        Hash is: b8bc5dbbaa6aa511cc0ff9bacf700ce9de4ade5ab4ef2a0d7ba8011eb2c9d964
-        (comment skipped)
-        Hash is: bee949e1172e552e7d83dc933c33fdbc50c19ff6f67c77e415e0bb5192d5947d
-        (comment skipped)
-        Resolving localhost 8080 ...
-socket(AF_UNIX, SOCK_STREAM|SOCK_CLOEXEC|SOCK_NONBLOCK, 0) = 4
-connect(4, {sa_family=AF_UNIX, sun_path="/var/run/nscd/socket"}, 110) = -1 ENOENT (No such file or directory)
-socket(AF_UNIX, SOCK_STREAM|SOCK_CLOEXEC|SOCK_NONBLOCK, 0) = 4
-connect(4, {sa_family=AF_UNIX, sun_path="/var/run/nscd/socket"}, 110) = -1 ENOENT (No such file or directory)
-socket(AF_NETLINK, SOCK_RAW|SOCK_CLOEXEC, NETLINK_ROUTE) = 4
-bind(4, {sa_family=AF_NETLINK, nl_pid=0, nl_groups=00000000}, 12) = 0
-getsockname(4, {sa_family=AF_NETLINK, nl_pid=32760, nl_groups=00000000}, [12]) = 0
-sendto(4, {{nlmsg_len=20, nlmsg_type=RTM_GETADDR, nlmsg_flags=NLM_F_REQUEST|NLM_F_DUMP, nlmsg_seq=1623316343, nlmsg_pid=0}, {ifa_family=AF_UNSPEC, ...}}, 20, 0, {sa_family=AF_NETLINK, nl_pid=0, nl_groups=00000000}, 12) = 20
-recvmsg(4, {msg_name={sa_family=AF_NETLINK, nl_pid=0, nl_groups=00000000}, msg_namelen=12, msg_iov=[{iov_base=[{{nlmsg_len=76, nlmsg_type=RTM_NEWADDR, nlmsg_flags=NLM_F_MULTI, nlmsg_seq=1623316343, nlmsg_pid=32760}, {ifa_family=AF_INET, ifa_prefixlen=8, ifa_flags=IFA_F_PERMANENT, ifa_scope=RT_SCOPE_HOST, ifa_index=if_nametoindex("lo")}, [{{nla_len=8, nla_type=IFA_ADDRESS}, inet_addr("127.0.0.1")}, {{nla_len=8, nla_type=IFA_LOCAL}, inet_addr("127.0.0.1")}, {{nla_len=7, nla_type=IFA_LABEL}, "lo"}, {{nla_len=8, nla_type=IFA_FLAGS}, IFA_F_PERMANENT}, {{nla_len=20, nla_type=IFA_CACHEINFO}, {ifa_prefered=4294967295, ifa_valid=4294967295, cstamp=1209, tstamp=1209}}]}, {{nlmsg_len=88, nlmsg_type=RTM_NEWADDR, nlmsg_flags=NLM_F_MULTI, nlmsg_seq=1623316343, nlmsg_pid=32760}, {ifa_family=AF_INET, ifa_prefixlen=24, ifa_flags=0, ifa_scope=RT_SCOPE_UNIVERSE, ifa_index=if_nametoindex("enp1s0")}, [{{nla_len=8, nla_type=IFA_ADDRESS}, inet_addr("192.168.8.106")}, {{nla_len=8, nla_type=IFA_LOCAL}, inet_addr("192.168.8.106")}, {{nla_len=8, nla_type=IFA_BROADCAST}, inet_addr("192.168.8.255")}, {{nla_len=11, nla_type=IFA_LABEL}, "enp1s0"}, {{nla_len=8, nla_type=IFA_FLAGS}, IFA_F_NOPREFIXROUTE}, {{nla_len=20, nla_type=IFA_CACHEINFO}, {ifa_prefered=75333, ifa_valid=75333, cstamp=4516, tstamp=4537}}]}], iov_len=4096}], msg_iovlen=1, msg_controllen=0, msg_flags=0}, 0) = 164
-recvmsg(4, {msg_name={sa_family=AF_NETLINK, nl_pid=0, nl_groups=00000000}, msg_namelen=12, msg_iov=[{iov_base=[{{nlmsg_len=72, nlmsg_type=RTM_NEWADDR, nlmsg_flags=NLM_F_MULTI, nlmsg_seq=1623316343, nlmsg_pid=32760}, {ifa_family=AF_INET6, ifa_prefixlen=128, ifa_flags=IFA_F_PERMANENT, ifa_scope=RT_SCOPE_HOST, ifa_index=if_nametoindex("lo")}, [{{nla_len=20, nla_type=IFA_ADDRESS}, inet_pton(AF_INET6, "::1")}, {{nla_len=20, nla_type=IFA_CACHEINFO}, {ifa_prefered=4294967295, ifa_valid=4294967295, cstamp=1209, tstamp=1209}}, {{nla_len=8, nla_type=IFA_FLAGS}, IFA_F_PERMANENT}]}, {{nlmsg_len=72, nlmsg_type=RTM_NEWADDR, nlmsg_flags=NLM_F_MULTI, nlmsg_seq=1623316343, nlmsg_pid=32760}, {ifa_family=AF_INET6, ifa_prefixlen=64, ifa_flags=IFA_F_PERMANENT, ifa_scope=RT_SCOPE_LINK, ifa_index=if_nametoindex("enp1s0")}, [{{nla_len=20, nla_type=IFA_ADDRESS}, inet_pton(AF_INET6, "fe80::69e5:49c1:95be:b4d8")}, {{nla_len=20, nla_type=IFA_CACHEINFO}, {ifa_prefered=4294967295, ifa_valid=4294967295, cstamp=4384, tstamp=4578}}, {{nla_len=8, nla_type=IFA_FLAGS}, IFA_F_PERMANENT|IFA_F_NOPREFIXROUTE}]}], iov_len=4096}], msg_iovlen=1, msg_controllen=0, msg_flags=0}, 0) = 144
-recvmsg(4, {msg_name={sa_family=AF_NETLINK, nl_pid=0, nl_groups=00000000}, msg_namelen=12, msg_iov=[{iov_base={{nlmsg_len=20, nlmsg_type=NLMSG_DONE, nlmsg_flags=NLM_F_MULTI, nlmsg_seq=1623316343, nlmsg_pid=32760}, 0}, iov_len=4096}], msg_iovlen=1, msg_controllen=0, msg_flags=0}, 0) = 20
-socket(AF_INET, SOCK_DGRAM|SOCK_CLOEXEC, IPPROTO_IP) = 4
-connect(4, {sa_family=AF_INET, sin_port=htons(8080), sin_addr=inet_addr("127.0.0.1")}, 16) = 0
-getsockname(4, {sa_family=AF_INET, sin_port=htons(33019), sin_addr=inet_addr("127.0.0.1")}, [28->16]) = 0
-        ... to 127.0.0.1 8080
-        Resolving 127.0.0.1 8081 ...
-        ... to 127.0.0.1 8081
-        Resolving 127.0.0.1 8082 ...
-        ... to 127.0.0.1 8082
-Metainfo successfully loaded; checking downloaded file...
-        Block 0 is missing
-        Block 1 is missing
-        Block 2 is missing
-Checking if file is already on disk...
-File not found on disk, proceding to download it
+
+
 socket(AF_INET, SOCK_STREAM, IPPROTO_IP) = 4
-connect(4, {sa_family=AF_INET, sin_port=htons(8080), sin_addr=inet_addr("127.0.0.1")}, 16) = -1 ECONNREFUSED (Connection refused)
-Error: Connect() function exited with code -1: Connection refused
-Checking if file is already on disk...
-File not found on disk, proceding to download it
+
+
+
 socket(AF_INET, SOCK_STREAM, IPPROTO_IP) = 5
+
 connect(5, {sa_family=AF_INET, sin_port=htons(8081), sin_addr=inet_addr("127.0.0.1")}, 16) = 0
+
 sendto(5, "12\34\336\0\0\0\0\0\0\0\0\0", 13, 0, NULL, 0) = 13
+
 recvfrom(5, "12\34\336\1\0\0\0\0\0\0\0\0", 13, 0, NULL, NULL) = 13
+
 recvfrom(5, "\333 e\367\213\21\304\177\2623\223\367[\321M\202\354\266\247\257\345\26ZS\2367\236a\206\375_\335"..., 65536, 0, NULL, NULL) = 65536
 Block 0 stored successfully :-D
+
 sendto(5, "12\34\336\0\0\0\0\0\0\0\0\1", 13, 0, NULL, 0) = 13
+
 recvfrom(5, "12\34\336\1\0\0\0\0\0\0\0\1", 13, 0, NULL, NULL) = 13
+
 recvfrom(5, "\206\232\321Qc\364Y\354\250w\256<CdN\33\345\375\270\273\31\243W\311\\\250;\244^6\374\32"..., 65536, 0, NULL, NULL) = 65536
+
 Block 1 stored successfully :-D
+
 sendto(5, "12\34\336\0\0\0\0\0\0\0\0\2", 13, 0, NULL, 0) = 13
+
 recvfrom(5, "12\34\336\1\0\0\0\0\0\0\0\2", 13, 0, NULL, NULL) = 13
+
 recvfrom(5, "Da\330+Y\333\300_6\307\335|_6\376\210\366Q\343\344\22\t\36\16\23\25\246(^\272=:"..., 65513, 0, NULL, NULL) = 65513
 Block 2 stored successfully :-D
+
 Checking if file is already on disk...
 File already downloaded, no point in continuing
 +++ exited with 0 +++

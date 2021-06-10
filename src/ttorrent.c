@@ -24,22 +24,18 @@ static const uint32_t MAGIC_NUMBER = 0xde1c3231; // = htonl(0x31321cde);
 static const uint8_t MSG_REQUEST = 0;
 static const uint8_t MSG_RESPONSE_OK = 1;
 static const uint8_t MSG_RESPONSE_NA = 2;
+static const uint16_t MAX_PORT_NUMBER = 65535;
+static const uint16_t MAX_PATH_SIZE = 4069;
+static const uint16_t MAX_WELL_KNOWN_PORT = 1023;
+
 
 enum { 	RAW_MESSAGE_SIZE = 13 };
 
 //funcions
 
-int client(char* path);
-int server(char* path, char* port)
-;
-
-/**
- * Main function.
- */
-
-
-
-
+int set_torrent( char *metainfo_file_path, struct torrent_t * const torrent);
+int client(struct torrent_t torrent);
+int server(struct torrent_t torrent, uint16_t const port);
 
 
 int main(int argc, char **argv) {
@@ -53,68 +49,68 @@ int main(int argc, char **argv) {
 	// ==========================================================================
 
 
-	// Comprovar si servidor o client
-	if(argc == 2) // TODO: canviar aixo que no sigui tan cutre
+	// Comprovar si servidor, client o error
+	if(argc == 2) // Client
 	{
-		return client(*(argv + 1));
-
-	}
-	// server
-	else // TODO: posar això bé
-	{
-		server(*(argv + 3), *(argv + 2));
+		struct torrent_t torrent;
 		
+		if(set_torrent(*(argv + 1), &torrent) == -1)
+			return -1;
+
+		return client(torrent);
 	}
+	if(argc == 4) // Server
+	{
+		int port = atoi(*(argv + 2));
 
-	// The following statements most certainly will need to be deleted at some point...
+		if ((*(*(argv + 1)) != '-') || (*(*(argv + 1) + 1 ) != 'l'))
+		{
+			perror("ERROR: Usage: ttorrent [-l port] file.ttorrent \n Usage: ttorrent file.ttorrent");
+			return -1;
+		}
+		
+		if(port > MAX_PORT_NUMBER)
+		{
+			perror("ERROR: Invalid port");
+			return -1;	
+		}
 
-	
-	(void) MSG_RESPONSE_NA;
-	(void) MSG_RESPONSE_OK;
+		if(port < MAX_WELL_KNOWN_PORT)
+		{
+			perror("ERROR: Port is a well-known port, please use a port in the range [1024, 65535]");
+			return -1;	
+		}
+		struct torrent_t torrent;
+		
+		if(set_torrent(*(argv + 3), &torrent) == -1)
+			return -1;
 
+		return server(torrent, (uint16_t) port);
+	}
+	if (argc < 4)
+	{
+		errno = E2BIG;
+		perror("Error: too many arguments! \n Usage: ttorrent [-l port] file.ttorrent \n Usage: ttorrent file.ttorrent");
+		return -1;
+	} 
+	else
+	{
+		perror("ERROR: Usage: ttorrent [-l port] file.ttorrent \n Usage: ttorrent file.ttorrent");
+		return -1;
+
+	}
 	return 0;
 }
 
 
 
-int client(char* path)
+int client(struct torrent_t torrent)
 {
 	
-	// TODO: Crec que és possible prescindir de la variable path
-
-	struct torrent_t torrent;
-
-	long int unsigned pathSize = 0;
-
-	while (*(path + pathSize ) != '\0')
-		++pathSize;
-
-	if(pathSize <= 9)
-	{
-		perror("The file must be in .ttorrent format");
-		return -1;
-	}
-
-	char *metainfoFileName = malloc(sizeof(char)*pathSize);
-	memcpy(metainfoFileName, path, pathSize);
-
-	long int unsigned count = 9; // TODO: while buscant el "."
-
-	pathSize -= count; // points to the '.' in anystr.ttorrent
-	char *fileName = malloc(sizeof(char)*pathSize);
-	memcpy(fileName, path, pathSize);
-
-	//1. Load a metainfo file
-	if (create_torrent_from_metainfo_file (metainfoFileName, &torrent ,fileName ) == -1)
-	{
-		perror("Could not create torrent from metainfo file");
-		return -1;
-	}
-	
-	
-	struct sockaddr_in sockaddress_peer;
-	memset(&sockaddress_peer, '\0', sizeof(struct sockaddr_in));
-	sockaddress_peer.sin_family = AF_INET;
+		
+	struct sockaddr_in sock_address_peer;
+	memset(&sock_address_peer, '\0', sizeof(struct sockaddr_in));
+	sock_address_peer.sin_family = AF_INET;
 	
 	
 	
@@ -132,24 +128,26 @@ int client(char* path)
 
 		
 	
-	for (uint64_t peerNumber = 0; peerNumber < torrent.peer_count; peerNumber++) /* 2. For each server peer in the metainfo file: */
+	for (uint64_t peer_number = 0; peer_number < torrent.peer_count; peer_number++) /* 2. For each server peer in the metainfo file: */
 	{
+		log_printf(LOG_DEBUG, "Checking peer %d", peer_number);
 
 		// a. Check for the existence of the associated downloaded file.
-		uint64_t missingBlockNumber = 0;
-		int fileDownloaded = 1;
+		uint64_t missing_block_number = 0;
+		int is_file_downloaded = 1;
 		log_message(LOG_INFO, "Checking if file is already on disk...");
-		while ((missingBlockNumber < torrent.block_count) && (fileDownloaded == 1))
+
+		while ((missing_block_number < torrent.block_count) && (is_file_downloaded == 1)) //checking which blocks are already stored on the disk
 		{
-			if (torrent.block_map[missingBlockNumber] == 0)
-				fileDownloaded = 0;
+			if (torrent.block_map[missing_block_number] == 0)
+				is_file_downloaded = 0;
 			else
-				++missingBlockNumber;
+				++missing_block_number;
 		}
-		if(fileDownloaded == 1)
+		if(is_file_downloaded == 1)
 		{
 			log_message(LOG_INFO, "File already downloaded, no point in continuing");
-			return 0;//Good ending
+			return 0; //Good ending
 		}
 		else
 			log_message(LOG_INFO, "File not found on disk, proceding to download it");
@@ -165,36 +163,40 @@ int client(char* path)
 			perror("Error: socket could not be created");
 			return -1;
 		}
-		
+		log_printf(LOG_DEBUG, "Socket created");
 		
 		
 		// Definim port
-		sockaddress_peer.sin_port = (torrent.peers + peerNumber)->peer_port;
+		sock_address_peer.sin_port = (torrent.peers + peer_number)->peer_port;
+		log_printf(LOG_DEBUG, "Port: %d", sock_address_peer.sin_port);
 		
 		
 		// Definim adreça
-		sockaddress_peer.sin_addr.s_addr = (torrent.peers + peerNumber)->peer_address[3];
-		sockaddress_peer.sin_addr.s_addr = sockaddress_peer.sin_addr.s_addr << 8;
-		sockaddress_peer.sin_addr.s_addr |= (torrent.peers + peerNumber)->peer_address[2];
-		sockaddress_peer.sin_addr.s_addr = sockaddress_peer.sin_addr.s_addr << 8;
-		sockaddress_peer.sin_addr.s_addr |= (torrent.peers + peerNumber)->peer_address[1];
-		sockaddress_peer.sin_addr.s_addr = sockaddress_peer.sin_addr.s_addr << 8;
-		sockaddress_peer.sin_addr.s_addr |= (torrent.peers + peerNumber)->peer_address[0];
+		sock_address_peer.sin_addr.s_addr = (torrent.peers + peer_number)->peer_address[3];
+		sock_address_peer.sin_addr.s_addr = sock_address_peer.sin_addr.s_addr << 8;
+		sock_address_peer.sin_addr.s_addr |= (torrent.peers + peer_number)->peer_address[2];
+		sock_address_peer.sin_addr.s_addr = sock_address_peer.sin_addr.s_addr << 8;
+		sock_address_peer.sin_addr.s_addr |= (torrent.peers + peer_number)->peer_address[1];
+		sock_address_peer.sin_addr.s_addr = sock_address_peer.sin_addr.s_addr << 8;
+		sock_address_peer.sin_addr.s_addr |= (torrent.peers + peer_number)->peer_address[0];
 		
+		log_printf(LOG_DEBUG, "Address: %d", sock_address_peer.sin_addr.s_addr);
 
 
-		if(connect(sock, (struct sockaddr *) &sockaddress_peer, sizeof( struct sockaddr)) == -1)
+
+		if(connect(sock, (struct sockaddr *) &sock_address_peer, sizeof( struct sockaddr)) == -1)
 		{
 			perror("Error: Connect() function exited with code -1");
 			continue; //No es pot conectar, passem al seguent peer
 		}
-		
+		log_printf(LOG_DEBUG, "Connected successfully");
+
 
 		
 		//Per cada peer comprovem cada bloc que ens falta
 		for (uint64_t block_number = 0; block_number < torrent.block_count; block_number++)
 		{		/* Per cada block que no tenim*/
-
+			log_printf(LOG_DEBUG, "Bloack number: %d", block_number);
 			if( torrent.block_map[block_number] == 0 )
 			{
 				message[4] = MSG_REQUEST;
@@ -291,53 +293,21 @@ int client(char* path)
 	
 	}
 	/*
-	free(metainfoFileName);
-	free(fileName);
+	free(metainfo_file_name);
+	free(file_name);
 	*/
 	destroy_torrent(&torrent);
 	return 0;
 }
 
-int server(char* path, char* port)
+int server(struct torrent_t torrent, uint16_t const port)
 {
-	//TODO: tota aquesta part s'hauria de posar en una funció pròpia
-
-	//torrent contains all the information about the torrent
-	struct torrent_t torrent;
-
-	long int unsigned pathSize = 0;
-
-	while (*(path + pathSize ) != '\0')
-		++pathSize;
-
-	if(pathSize <= 9)
-	{
-		log_message(LOG_INFO, "The file must be in .ttorrent format");
-		return -1;
-	}
-
-	// TODO: FIX MEMORY LEAKS!
-
-	char *metainfoFileName = malloc(sizeof(char)*pathSize);
-	memcpy(metainfoFileName, path, pathSize);
-
-	long int unsigned count = 9; // TODO: while buscant el "."
-
-	pathSize-=count; // points to the '.' in anystr.ttorrent
-	char *fileName = malloc(sizeof(char)*pathSize);
-	memcpy(fileName, path, pathSize);
-
-	//1. Load a metainfo file
-	if (create_torrent_from_metainfo_file (metainfoFileName, &torrent ,fileName ) == -1)
-	{
-		log_message(LOG_INFO, "Could not load metainfo file correctly");
-		return -1;
-	}
+	
 
 
 
 	log_message(LOG_INFO, "Checking disck file...");
-	if (1)
+	if (1) //this if is used so number_of_blocks is declared only within this scope
 	{
 		uint64_t number_of_blocks = 0;
 		for (uint64_t block_number = 0; block_number < torrent.block_count; block_number++)
@@ -354,25 +324,13 @@ int server(char* path, char* port)
 	}
 
 
-	// TODO: tot això  ⤵
-	/*
-	+	1. Load a metainfo file (functionality is already implemented in the file_io API through the create_torrent_from_-
-	+		metainfo_file function).
-	+			a. Check for the existence of the associated downloaded file.
-	+			b. Check which blocks are correct using the SHA256 hashes in the metainfo file.
-	+	2. Forever listen to incoming connections, and for each connection:
-	+			a. Wait for a message.
-	+			b. If a message requests a block that can be served (correct hash), respond with the appropriate message,
-	-				followed by the raw block data.
-	+			c. Otherwise, respond with a message signaling the unavailability of the block.			
-	*/
 
-	struct sockaddr_in sockaddress, s1address;
-	memset(&sockaddress, '\0', sizeof(struct sockaddr_in));
-	memset(&s1address, '\0', sizeof(struct sockaddr_in));
-	sockaddress.sin_family = AF_INET;
-	sockaddress.sin_addr.s_addr = INADDR_ANY;
-	sockaddress.sin_port = htons((uint16_t) atoi(port));
+	struct sockaddr_in sock_address, s1_address;
+	memset(&sock_address, '\0', sizeof(struct sockaddr_in));
+	memset(&s1_address, '\0', sizeof(struct sockaddr_in));
+	sock_address.sin_family = AF_INET;
+	sock_address.sin_addr.s_addr = INADDR_ANY;
+	sock_address.sin_port = htons(port);
 
 
 	int sock = socket(AF_INET, SOCK_STREAM, 0);
@@ -383,7 +341,7 @@ int server(char* path, char* port)
 		return -1;
 	}
 
-	if (bind( sock, (struct sockaddr *) &sockaddress, sizeof(struct sockaddr_in) ) == -1)
+	if (bind( sock, (struct sockaddr *) &sock_address, sizeof(struct sockaddr_in) ) == -1)
 	{
 		perror("Error: bind() function exited with code -1");
 		return -1;
@@ -398,12 +356,12 @@ int server(char* path, char* port)
 	uint8_t message[RAW_MESSAGE_SIZE];
 
 	
-	socklen_t addrlen = sizeof(struct sockaddr_in);
+	socklen_t addr_len = sizeof(struct sockaddr_in);
 	int s1;
 	for(;;) //Forever listen to incoming connections
 	{
 		
-		s1 = accept(sock, (struct sockaddr *) &s1address, &addrlen);
+		s1 = accept(sock, (struct sockaddr *) &s1_address, &addr_len);
 
 		if(s1 == -1)
 		{
@@ -458,6 +416,7 @@ int server(char* path, char* port)
 				if(recv(s1, message, RAW_MESSAGE_SIZE, 0) != RAW_MESSAGE_SIZE)
 				{
 					log_printf(LOG_INFO, "Client closed the connection");
+					errno = 0;
 
 					exit(0);
 				}
@@ -521,5 +480,47 @@ int server(char* path, char* port)
 
 	}//End of the listen for
 
+	return 0;
+}
+
+
+int set_torrent( char * metainfo_file_path, struct torrent_t * const torrent)
+{
+	
+	uint16_t path_size = 0;
+
+	while (*(metainfo_file_path + path_size ) != '\0')
+	{
+		++path_size;
+		if(path_size > MAX_PATH_SIZE)
+		{
+			perror("Error: File path is too long!");
+			errno = ENAMETOOLONG;
+			return -1;
+		}
+	}
+
+	// points to the '.' in anystr.ttorrent
+	uint16_t  dot_position = path_size;
+	
+	while(( *(metainfo_file_path + dot_position) != '.') && (dot_position > 0))
+		dot_position--; 
+
+	if (strcmp(metainfo_file_path + dot_position, ".ttorrent") != 0)
+	{
+		perror("Error: The file must be in .ttorrent format");
+		return -1;
+	}
+
+	// file_path is the same as metainfo_file_path until the last "."
+	char *file_path = malloc(sizeof(char) * dot_position);
+	memcpy(file_path, metainfo_file_path, dot_position);
+
+	//1. Load a metainfo file
+	if (create_torrent_from_metainfo_file (metainfo_file_path, torrent ,file_path ) == -1)
+	{
+		perror("Could not create torrent from metainfo file");
+		return -1;
+	}
 	return 0;
 }
