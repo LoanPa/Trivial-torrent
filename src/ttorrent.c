@@ -63,9 +63,9 @@ int main(int argc, char **argv) {
 	{
 		int port = atoi(*(argv + 2));
 
-		if ((*(*(argv + 1)) != '-') || (*(*(argv + 1) + 1 ) != 'l'))
+		if ((*(*(argv + 1)) != '-') || (*(*(argv + 1) + 1 ) != 'l') || (*(*(argv + 1) + 2 ) != 0))
 		{
-			perror("ERROR: Usage: ttorrent [-l port] file.ttorrent \n Usage: ttorrent file.ttorrent");
+			perror("ERROR: Invalid argument\nUsage: ttorrent [-l port] file.ttorrent \nUsage: ttorrent file.ttorrent\n");
 			return -1;
 		}
 		
@@ -77,7 +77,7 @@ int main(int argc, char **argv) {
 
 		if(port < MAX_WELL_KNOWN_PORT)
 		{
-			perror("ERROR: Port is a well-known port, please use a port in the range [1024, 65535]");
+			perror("ERROR: Port is a well-known port, please use a port in the range [1024, 65535]\n");
 			return -1;	
 		}
 		struct torrent_t torrent;
@@ -90,7 +90,7 @@ int main(int argc, char **argv) {
 	if (argc < 4)
 	{
 		errno = E2BIG;
-		perror("Error: too many arguments! \n Usage: ttorrent [-l port] file.ttorrent \n Usage: ttorrent file.ttorrent");
+		perror("Error: too many arguments!\nUsage: ttorrent [-l port] file.ttorrent\nUsage: ttorrent file.ttorrent\n");
 		return -1;
 	} 
 	else
