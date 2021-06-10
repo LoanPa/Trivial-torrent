@@ -246,9 +246,9 @@ int client(char* path)
 					uint64_t expected_block_length = get_block_size(&torrent, block_number);
 
 					//Buffer per a contenir el bloc
-					//uint8_t data_message[expected_block_length];
+					uint8_t data_message[expected_block_length];
 
-					if (recv(sock, recvd_block.data, expected_block_length , 0) <= 0)
+					if (recv(sock, data_message, expected_block_length , 0) <= 0)
 					{
 						perror("Error: 2nd recv() function exited with code -1");
 						continue; //Provem amb un altre bloc però amb el mateix peer
@@ -258,7 +258,12 @@ int client(char* path)
 					//Ara que sabem que el recv no els dona error fem l'assignació
 					recvd_block.size = expected_block_length;
 					
-
+					
+					for (uint64_t i = 0; i < recvd_block.size; i++)
+					{
+						recvd_block.data[i] = data_message[i];
+					}
+					
 					//Assignem a recvd_block el contingut de data_message
 					//memcpy(recvd_block.data, data_message, recvd_block.size);
 					
@@ -276,8 +281,6 @@ int client(char* path)
 					Acabo d'adonar-me que primer es rep la confirmació de que el server te el bloc i després s'envia el bloc
 					*/
 					
-
-
 					if (store_block(&torrent, block_number, &recvd_block) == -1)
 						perror("Error: block was not stored correctly");	
 					else
