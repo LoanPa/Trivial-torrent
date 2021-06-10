@@ -418,6 +418,7 @@ int server(char* path, char* port)
 
 		if(s1 == -1)
 		{
+			log_printf(LOG_INFO, "Preparing to accept...");
 			perror("Error: accept() function exited with code -1");
 			log_printf(LOG_INFO, "errno = %d", errno);
 			return -1;
@@ -461,12 +462,14 @@ int server(char* path, char* port)
 		
 			while(s1)
 			{
+	
+				log_printf(LOG_DEBUG, "Dins el while");
 				uint64_t block_number = 0;
 
 				if(recv(s1, message, RAW_MESSAGE_SIZE, 0) != RAW_MESSAGE_SIZE)
 				{
 					log_printf(LOG_INFO, "Client closed the connection");
-					exit(0);
+					continue;
 				}
 				log_printf(LOG_DEBUG, "recv()'d successfully");
 				
