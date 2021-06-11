@@ -50,16 +50,17 @@ int main(int argc, char **argv) {
 
 
 	// Comprovar si servidor, client o error
-	if(argc == 2) // Client
+	if (argc == 2) // Client
 	{
 		struct torrent_t torrent;
 		
-		if(set_torrent(*(argv + 1), &torrent) == -1)
+		if (set_torrent(*(argv + 1), &torrent) == -1)
 			return -1;
 
+		
 		return client(torrent);
 	}
-	if(argc == 4) // Server
+	if (argc == 4) // Server
 	{
 		int port = atoi(*(argv + 2));
 
@@ -69,25 +70,25 @@ int main(int argc, char **argv) {
 			return -1;
 		}
 		
-		if(port > MAX_PORT_NUMBER)
+		if (port > MAX_PORT_NUMBER)
 		{
 			perror("ERROR: Invalid port");
 			return -1;	
 		}
 
-		if(port < MAX_WELL_KNOWN_PORT)
+		if (port < MAX_WELL_KNOWN_PORT)
 		{
 			perror("ERROR: Port is a well-known port, please use a port in the range [1024, 65535]\n");
 			return -1;	
 		}
 		struct torrent_t torrent;
 		
-		if(set_torrent(*(argv + 3), &torrent) == -1)
+		if (set_torrent(*(argv + 3), &torrent) == -1)
 			return -1;
 
 		return server(torrent, (uint16_t) port);
 	}
-	if (argc < 4)
+	if (argc > 4)
 	{
 		errno = E2BIG;
 		perror("Error: too many arguments!\nUsage: ttorrent [-l port] file.ttorrent\nUsage: ttorrent file.ttorrent\n");
@@ -95,7 +96,7 @@ int main(int argc, char **argv) {
 	} 
 	else
 	{
-		perror("ERROR: Usage: ttorrent [-l port] file.ttorrent \n Usage: ttorrent file.ttorrent");
+		perror("ERROR: Usage: ttorrent [-l port] file.ttorrent \n Usage: ttorrent file.ttorrent\n");
 		return -1;
 
 	}
@@ -112,9 +113,6 @@ int client(struct torrent_t torrent)
 	memset(&sock_address_peer, '\0', sizeof(struct sockaddr_in));
 	sock_address_peer.sin_family = AF_INET;
 	
-	
-	
-	
 	// Declaracio message
 	uint8_t message[RAW_MESSAGE_SIZE];
 
@@ -122,12 +120,7 @@ int client(struct torrent_t torrent)
 	message[1] = (uint8_t) (MAGIC_NUMBER >> 8);	
 	message[2] = (uint8_t) (MAGIC_NUMBER >> 16);
 	message[3] = (uint8_t) (MAGIC_NUMBER >> 24);
-	//message[4] = MSG_REQUEST;
-	
 
-
-		
-	
 	for (uint64_t peer_number = 0; peer_number < torrent.peer_count; peer_number++) /* 2. For each server peer in the metainfo file: */
 	{
 		log_printf(LOG_DEBUG, "Checking peer %d", peer_number);
@@ -144,7 +137,7 @@ int client(struct torrent_t torrent)
 			else
 				++missing_block_number;
 		}
-		if(is_file_downloaded == 1)
+		if (is_file_downloaded == 1)
 		{
 			log_message(LOG_INFO, "File already downloaded, no point in continuing");
 			return 0; //Good ending
@@ -168,7 +161,6 @@ int client(struct torrent_t torrent)
 		
 		// Definim port
 		sock_address_peer.sin_port = (torrent.peers + peer_number)->peer_port;
-		log_printf(LOG_DEBUG, "Port: %d", sock_address_peer.sin_port);
 		
 		
 		// Definim adreça
@@ -179,12 +171,9 @@ int client(struct torrent_t torrent)
 		sock_address_peer.sin_addr.s_addr |= (torrent.peers + peer_number)->peer_address[1];
 		sock_address_peer.sin_addr.s_addr = sock_address_peer.sin_addr.s_addr << 8;
 		sock_address_peer.sin_addr.s_addr |= (torrent.peers + peer_number)->peer_address[0];
-		
-		log_printf(LOG_DEBUG, "Address: %d", sock_address_peer.sin_addr.s_addr);
 
 
-
-		if(connect(sock, (struct sockaddr *) &sock_address_peer, sizeof( struct sockaddr)) == -1)
+		if (connect(sock, (struct sockaddr *) &sock_address_peer, sizeof( struct sockaddr)) == -1)
 		{
 			perror("Error: Connect() function exited with code -1");
 			continue; //No es pot conectar, passem al seguent peer
@@ -197,7 +186,7 @@ int client(struct torrent_t torrent)
 		for (uint64_t block_number = 0; block_number < torrent.block_count; block_number++)
 		{		/* Per cada block que no tenim*/
 			log_printf(LOG_DEBUG, "Bloack number: %d", block_number);
-			if( torrent.block_map[block_number] == 0 )
+			if ( torrent.block_map[block_number] == 0 )
 			{
 				message[4] = MSG_REQUEST;
 
@@ -226,14 +215,6 @@ int client(struct torrent_t torrent)
 				
 				if (recv(sock, &message, sizeof(message), 0 ) == -1)
 				{
-					/*
-					A TENIR EN COMPTE,	
-						return de la funció recv:
-						These calls return the number of bytes received, or -1 if an
-						error occurred.  In the event of an error, errno is set to
-						indicate the error.
-						
-					*/
 					perror("Error: 1st recv() function exited with code -1");
 					continue; //Provem amb un altre bloc però amb el mateix peer
 				}
@@ -241,9 +222,7 @@ int client(struct torrent_t torrent)
 
 				if (message[4] == MSG_RESPONSE_OK)
 				{
-					
 					struct block_t recvd_block;
-					
 					
 					uint64_t expected_block_length = get_block_size(&torrent, block_number);
 
@@ -267,7 +246,7 @@ int client(struct torrent_t torrent)
 					}
 					
 					//Assignem a recvd_block el contingut de data_message
-					//memcpy(recvd_block.data, data_message, recvd_block.size);
+					
 					
 					if (store_block(&torrent, block_number, &recvd_block) == -1)
 					{
@@ -285,7 +264,7 @@ int client(struct torrent_t torrent)
 		}// Aquí acaba el for dels blocs
 
 		
-		if(close(sock) == -1)
+		if (close(sock) == -1)
 		{
 			perror("Error: close() function exited with code -1");
 			return -1;
@@ -358,12 +337,12 @@ int server(struct torrent_t torrent, uint16_t const port)
 	
 	socklen_t addr_len = sizeof(struct sockaddr_in);
 	int s1;
-	for(;;) //Forever listen to incoming connections
+	for (;;) //Forever listen to incoming connections
 	{
 		
 		s1 = accept(sock, (struct sockaddr *) &s1_address, &addr_len);
 
-		if(s1 == -1)
+		if (s1 == -1)
 		{
 			log_printf(LOG_INFO, "Preparing to accept...");
 			perror("Error: accept() function exited with code -1");
@@ -372,7 +351,7 @@ int server(struct torrent_t torrent, uint16_t const port)
 		}
 		
 		int pid = fork();
-		if(pid == -1)
+		if (pid == -1)
 		{
 			perror("Error: fork() function exited with code -1");
 			return -1;
@@ -382,7 +361,7 @@ int server(struct torrent_t torrent, uint16_t const port)
 		{
 			log_message(LOG_DEBUG, "Parent process");
 			
-			if(close(s1 == -1))
+			if (close(s1 == -1))
 			{
 				perror("Error: close(s1) exited with code -1");
 				log_printf(LOG_INFO, "errno = %d", errno);
@@ -393,11 +372,11 @@ int server(struct torrent_t torrent, uint16_t const port)
 			continue; // seguim amb el for
 		}
 		
-		if(pid == 0)
+		if (pid == 0)
 		{
 			log_printf(LOG_DEBUG, "Child process");
 			
-			if(close(sock) == -1)
+			if (close(sock) == -1)
 			{
 				perror("Error: close(sock) exited with code -1");
 				log_printf(LOG_INFO, "errno = %d", errno);
@@ -405,24 +384,26 @@ int server(struct torrent_t torrent, uint16_t const port)
 			}
 			log_printf(LOG_DEBUG, "sock closed succesfully");
 			
-			
-		
-			while(1)
+			short int client_is_available = 1;
+
+			while (client_is_available)
 			{
 	
 				log_printf(LOG_DEBUG, "Dins el while");
 				uint64_t block_number = 0;
 
-				if(recv(s1, message, RAW_MESSAGE_SIZE, 0) != RAW_MESSAGE_SIZE)
+				if (recv(s1, message, RAW_MESSAGE_SIZE, 0) != RAW_MESSAGE_SIZE)
 				{
 					log_printf(LOG_INFO, "Client closed the connection");
 					errno = 0;
 
-					exit(0);
+					client_is_available = 0;
+					continue;
 				}
 				log_printf(LOG_DEBUG, "recv()'d successfully");
 				
-				if(message[4] == MSG_REQUEST)	// Si el client demana un bloc, carreguem el número del bloc que demana
+
+				if (message[4] == MSG_REQUEST)	// If the client sends a request, the requested block number is loaded
 					for (uint8_t i = 5; i < 13; i++)
 					{
 						block_number <<= 8;
@@ -443,7 +424,7 @@ int server(struct torrent_t torrent, uint16_t const port)
 				}
 
 				log_message(LOG_DEBUG, "Preparing to send() the answer");
-				if(send(s1, message, RAW_MESSAGE_SIZE, 0) == -1)//Aquí només diem si tenim o no el bloc
+				if (send(s1, message, RAW_MESSAGE_SIZE, 0) == -1)//Aquí només diem si tenim o no el bloc
 				{
 					perror("Error:  1st send() function exited with code -1");
 					log_printf(LOG_INFO, "errno = %d", errno);
@@ -460,7 +441,7 @@ int server(struct torrent_t torrent, uint16_t const port)
 				struct block_t requested_block;
 				load_block(&torrent,block_number, &requested_block);
 
-				if(send(s1, requested_block.data, requested_block.size, 0) == -1)//Ara enviem tot el bloc
+				if (send(s1, requested_block.data, requested_block.size, 0) == -1)//Ara enviem tot el bloc
 				{
 					perror("Error: 2nd send() function exited with code -1");
 					log_printf(LOG_INFO, "errno = %d", errno);
@@ -470,13 +451,6 @@ int server(struct torrent_t torrent, uint16_t const port)
 
 			exit(0);
 		}
-		
-
-		
-
-
-
-
 
 	}//End of the listen for
 
@@ -488,22 +462,30 @@ int set_torrent( char * metainfo_file_path, struct torrent_t * const torrent)
 {
 	
 	uint16_t path_size = 0;
-
-	while (*(metainfo_file_path + path_size ) != '\0')
+	/*
+	if (metainfo_file_path[0] == '0')
+	{
+		perror("ERROR: Invalid argument, please specify a path\nUsage: ttorrent [-l port] file.ttorrent \nUsage: ttorrent file.ttorrent\n");
+		return -1;
+	}			
+	*/
+	
+	while (*(metainfo_file_path + path_size) != '\0')
 	{
 		++path_size;
-		if(path_size > MAX_PATH_SIZE)
+		if (path_size > MAX_PATH_SIZE)
 		{
 			perror("Error: File path is too long!");
 			errno = ENAMETOOLONG;
 			return -1;
 		}
+		
 	}
 
 	// points to the '.' in anystr.ttorrent
 	uint16_t  dot_position = path_size;
 	
-	while(( *(metainfo_file_path + dot_position) != '.') && (dot_position > 0))
+	while (( *(metainfo_file_path + dot_position) != '.') && (dot_position > 0))
 		dot_position--; 
 
 	if (strcmp(metainfo_file_path + dot_position, ".ttorrent") != 0)
@@ -513,14 +495,24 @@ int set_torrent( char * metainfo_file_path, struct torrent_t * const torrent)
 	}
 
 	// file_path is the same as metainfo_file_path until the last "."
+	
+	
+	// file_path is the same as metainfo_file_path until the last "."
 	char *file_path = malloc(sizeof(char) * dot_position);
+
+	if (file_path == NULL)
+	{
+		perror("Error: malloc function exited with code -1");
+		return -1;
+	}
 	memcpy(file_path, metainfo_file_path, dot_position);
 
 	//1. Load a metainfo file
-	if (create_torrent_from_metainfo_file (metainfo_file_path, torrent ,file_path ) == -1)
+	if (create_torrent_from_metainfo_file(metainfo_file_path, torrent ,file_path) == -1)
 	{
 		perror("Could not create torrent from metainfo file");
 		return -1;
 	}
+	free(file_path);
 	return 0;
 }
