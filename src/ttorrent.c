@@ -25,7 +25,8 @@ static const uint8_t MSG_REQUEST = 0;
 static const uint8_t MSG_RESPONSE_OK = 1;
 static const uint8_t MSG_RESPONSE_NA = 2;
 static const uint16_t MAX_PORT_NUMBER = 65535;
-static const uint16_t MAX_PATH_SIZE = 4069;
+static const uint16_t MAX_PATH_LENGTH = 4096;
+static const uint16_t MAX_FILE_NAME_LENGTH = 4255;
 static const uint16_t MAX_WELL_KNOWN_PORT = 1023;
 
 
@@ -223,8 +224,9 @@ int client(struct torrent_t torrent)
 				if (message[4] == MSG_RESPONSE_OK)
 				{
 					struct block_t recvd_block;
+					uint64_t expected_block_length = 0;
 					
-					uint64_t expected_block_length = get_block_size(&torrent, block_number);
+					expected_block_length = get_block_size(&torrent, block_number);
 
 					//Buffer per a contenir el bloc
 					uint8_t data_message[expected_block_length];
@@ -285,7 +287,7 @@ int server(struct torrent_t torrent, uint16_t const port)
 
 
 
-	log_message(LOG_INFO, "Checking disck file...");
+	log_message(LOG_INFO, "Checking dis	k file...");
 	if (1) //this if is used so number_of_blocks is declared only within this scope
 	{
 		uint64_t number_of_blocks = 0;
@@ -462,40 +464,41 @@ int set_torrent( char * metainfo_file_path, struct torrent_t * const torrent)
 {
 	
 	uint16_t path_size = 0;
-	/*
-	if (metainfo_file_path[0] == '0')
-	{
-		perror("ERROR: Invalid argument, please specify a path\nUsage: ttorrent [-l port] file.ttorrent \nUsage: ttorrent file.ttorrent\n");
-		return -1;
-	}			
-	*/
 	
 	while (*(metainfo_file_path + path_size) != '\0')
 	{
 		++path_size;
-		if (path_size > MAX_PATH_SIZE)
+		if (path_size > MAX_PATH_LENGTH)
 		{
 			perror("Error: File path is too long!");
 			errno = ENAMETOOLONG;
 			return -1;
 		}
-		
 	}
 
 	// points to the '.' in anystr.ttorrent
 	uint16_t  dot_position = path_size;
 	
 	while (( *(metainfo_file_path + dot_position) != '.') && (dot_position > 0))
-		dot_position--; 
+		dot_position--;
 
+	uint16_t  slash_position = path_size;
+
+	while (( *(metainfo_file_path + slash_position) != '/') && (slash_position > 0))
+		slash_position--;
+
+	if ( (path_size - slash_position) > MAX_FILE_NAME_LENGTH) // if file name is grather than 255
+	{
+		perror("Error: File name is too long!");
+		errno = ENAMETOOLONG;
+		return -1;
+	}
+	
 	if (strcmp(metainfo_file_path + dot_position, ".ttorrent") != 0)
 	{
 		perror("Error: The file must be in .ttorrent format");
 		return -1;
 	}
-
-	// file_path is the same as metainfo_file_path until the last "."
-	
 	
 	// file_path is the same as metainfo_file_path until the last "."
 	char *file_path = malloc(sizeof(char) * dot_position);
